@@ -3,29 +3,34 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 import Footer from '../common/Footer';
+import { useAuth } from '../context/AuthContext';
+//import Navbar from '../common/Navbar';  
 
 const Profile = () => {
+  const { user, logout } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
   const [error, setError] = useState('');
   const navigate = useNavigate();
 
+  // fullName + email come from DB via login response (user object in AuthContext)
+  // everything else is local-only placeholder/editable data for now
   const [profile, setProfile] = useState({
-    fullName: 'John Doe',
-    email: 'john.doe@example.com',
-    username: 'johndoe',
+    fullName: '',
+    email: '',
+    role: '',
+    username: '',
     bio: 'Passionate artist and AI enthusiast. Creating beautiful art with technology.',
-    location: 'New York, USA',
-    website: 'https://johndoe.com',
-    joinDate: 'January 15, 2024',
-    role: 'Artist',
-    avatar: 'https://ui-avatars.com/api/?name=John+Doe&size=150&background=6366f1&color=fff',
+    location: '',
+    website: '',
+    joinDate: '',
+    avatar: 'https://ui-avatars.com/api/?name=User&size=150&background=6366f1&color=fff',
     stats: {
-      projects: 47,
-      followers: 1234,
-      following: 567,
-      artworks: 89
+      projects: 0,
+      followers: 0,
+      following: 0,
+      artworks: 0
     },
     preferences: {
       emailNotifications: true,
@@ -37,15 +42,21 @@ const Profile = () => {
 
   const [formData, setFormData] = useState({ ...profile });
 
+  // Redirect if not logged in, and sync fullName/email/role from the real logged-in user
   useEffect(() => {
-    // In real app, fetch profile from API
-    // const fetchProfile = async () => {
-    //   const response = await api.get('/profile');
-    //   setProfile(response.data);
-    //   setFormData(response.data);
-    // };
-    // fetchProfile();
-  }, []);
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+    const updated = {
+      fullName: user.name,   // maps to full_name in DB
+      email: user.email,     // from DB
+      role: user.role,       // from DB
+      avatar: `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name || 'User')}&size=150&background=6366f1&color=fff`
+    };
+    setProfile(prev => ({ ...prev, ...updated }));
+    setFormData(prev => ({ ...prev, ...updated }));
+  }, [user, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value, type, checked } = e.target;
@@ -67,7 +78,6 @@ const Profile = () => {
 
   const handleEditToggle = () => {
     if (isEditing) {
-      // Cancel editing, revert changes
       setFormData({ ...profile });
     }
     setIsEditing(!isEditing);
@@ -79,18 +89,14 @@ const Profile = () => {
     setLoading(true);
     setError('');
     setSuccess('');
-    
+
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1500));
-      
-      // Update profile
+      // Note: only local state is updated here. bio/location/website/preferences
+      // are not persisted to the database yet — that requires backend support.
+      await new Promise(resolve => setTimeout(resolve, 800));
       setProfile({ ...formData });
       setIsEditing(false);
-      setSuccess('Profile updated successfully!');
-      
-      // In real app:
-      // await api.put('/profile', formData);
+      setSuccess('Profile updated!');
     } catch (err) {
       setError('Failed to update profile. Please try again.');
     } finally {
@@ -99,7 +105,7 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem('token');
+    logout();
     navigate('/login');
   };
 
@@ -108,23 +114,21 @@ const Profile = () => {
     if (file) {
       const reader = new FileReader();
       reader.onloadend = () => {
-        setFormData(prev => ({
-          ...prev,
-          avatar: reader.result
-        }));
+        setFormData(prev => ({ ...prev, avatar: reader.result }));
       };
       reader.readAsDataURL(file);
     }
   };
 
+  if (!user) return null;
+
   return (
     <div className="profile-page">
       <div className="profile-container">
-        {/* Header */}
         <div className="profile-header">
           <h1>Profile</h1>
           <div className="header-actions">
-            <button 
+            <button
               className={`btn-edit ${isEditing ? 'btn-cancel' : ''}`}
               onClick={handleEditToggle}
             >
@@ -141,13 +145,10 @@ const Profile = () => {
           </div>
         </div>
 
-        {/* Messages */}
         {success && <div className="success-message">{success}</div>}
         {error && <div className="error-message">{error}</div>}
 
-        {/* Profile Content */}
         <div className="profile-content">
-          {/* Left Column - Avatar & Stats */}
           <div className="profile-left">
             <div className="avatar-section">
               <div className="avatar-wrapper">
@@ -169,7 +170,7 @@ const Profile = () => {
               </div>
               <h2 className="profile-name">{profile.fullName}</h2>
               <p className="profile-role">{profile.role}</p>
-              <p className="profile-join">Joined {profile.joinDate}</p>
+              {profile.joinDate && <p className="profile-join">Joined {profile.joinDate}</p>}
             </div>
 
             <div className="stats-section">
@@ -190,11 +191,10 @@ const Profile = () => {
             </div>
           </div>
 
-          {/* Right Column - Profile Details */}
           <div className="profile-right">
             <div className="profile-info">
               <h3>Personal Information</h3>
-              
+
               <div className="info-grid">
                 <div className="info-field">
                   <label>Full Name</label>
@@ -222,23 +222,13 @@ const Profile = () => {
                       className="edit-input"
                     />
                   ) : (
-                    <p>@{profile.username}</p>
+                    <p>{profile.username ? `@${profile.username}` : 'Not set'}</p>
                   )}
                 </div>
 
                 <div className="info-field">
                   <label>Email</label>
-                  {isEditing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleInputChange}
-                      className="edit-input"
-                    />
-                  ) : (
-                    <p>{profile.email}</p>
-                  )}
+                  <p>{profile.email}</p>
                 </div>
 
                 <div className="info-field">
@@ -252,7 +242,7 @@ const Profile = () => {
                       className="edit-input"
                     />
                   ) : (
-                    <p>{profile.location}</p>
+                    <p>{profile.location || 'Not set'}</p>
                   )}
                 </div>
 
@@ -294,7 +284,6 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Preferences */}
             <div className="preferences-section">
               <h3>Preferences</h3>
               <div className="preferences-grid">
@@ -371,11 +360,10 @@ const Profile = () => {
               </div>
             </div>
 
-            {/* Save Button (Edit Mode) */}
             {isEditing && (
               <div className="edit-actions">
-                <button 
-                  className="btn-save" 
+                <button
+                  className="btn-save"
                   onClick={handleSave}
                   disabled={loading}
                 >
@@ -384,11 +372,11 @@ const Profile = () => {
                 <button className="btn-cancel-edit" onClick={handleEditToggle}>
                   Cancel
                 </button>
-                <Footer/>
               </div>
             )}
           </div>
         </div>
+        {isEditing && <Footer />}
       </div>
     </div>
   );
