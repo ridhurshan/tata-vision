@@ -5,11 +5,16 @@ import './Upload.css';
 import '../common/Navbar';
 import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
-import Slidebar from '../common/Slidebar';
+import { useAuth } from '../context/AuthContext'; 
+import { createProject } from '../services/projectService'; 
+
 
 const Upload = () => {
+  const { user } = useAuth();
   const [file, setFile] = useState(null);
   const [preview, setPreview] = useState(null);
+  const [title, setTitle] = useState('');           // ← add this
+  const [description, setDescription] = useState(''); 
   const [isDragging, setIsDragging] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -87,38 +92,51 @@ const Upload = () => {
     img.src = URL.createObjectURL(file);
   };
 
+
   const handleUpload = async () => {
     if (!file) {
       setError('Please select an image first.');
       return;
     }
+    if (!title.trim()) {
+      setError('Please give your project a title.');
+      return;
+    }
+    if (!user) {
+      setError('You must be logged in to upload.');
+      return;
+    }
 
     setIsUploading(true);
     setUploadProgress(0);
+    setError('');
 
     // Simulate upload progress
     const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setSuccess('Image uploaded successfully! AI is processing your artwork...');
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
+      setUploadProgress((prev) => (prev < 90 ? prev + 10 : prev));
+    }, 200);
 
-    // Simulate API call
     try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      // const formData = new FormData();
-      // formData.append('image', file);
-      // const response = await api.post('/upload', formData);
-      console.log('Uploading file:', file);
+      const response = await createProject({
+        user_id: user.id,
+        title,
+        description
+      });
+
+      clearInterval(interval);
+      setUploadProgress(100);
+      setSuccess('Project created successfully! AI is processing your artwork...');
+      console.log('Created project:', response.data);
+
+      // navigate to the new project's page after a short pause
+      setTimeout(() => {
+        navigate(`/projects/${response.data.projectId}`);
+      }, 1200);
+
     } catch (err) {
-      setError('Upload failed. Please try again.');
+      clearInterval(interval);
       setIsUploading(false);
+      setError(err.response?.data?.message || 'Upload failed. Please try again.');
     }
   };
 
@@ -143,21 +161,17 @@ const Upload = () => {
 
   return (
     <>
-    <Navbar/>
-    <div className="upload-page">
-        
-        
-        
-      <div className="upload-container">
-        {/* Header */}
-        <div className="upload-header">
-          <div className="header-left">
-            <h1>Upload Your Sketch</h1>
-            <p className="subtitle">
-              Share your drawing and let AI transform it into amazing artwork
-            </p>
+      <Navbar/>
+      <div className="upload-page">
+        <div className="upload-container">
+          <div className="upload-header">
+            <div className="header-left">
+              <h1>Upload Your Sketch</h1>
+              <p className="subtitle">
+                Share your drawing and let AI transform it into amazing artwork
+              </p>
+            </div>
           </div>
-        </div>
 
         <div className="upload-content">
           {/* Upload Area */}
@@ -213,29 +227,49 @@ const Upload = () => {
             </div>
 
             {/* File Info */}
-            {file && (
-              <div className="file-info">
-                <div className="file-details">
-                  <span className="file-name">{file.name}</span>
-                  <span className="file-size">{formatFileSize(file.size)}</span>
+              {file && (
+                <div className="file-info">
+                  <div className="file-details">
+                    <span className="file-name">{file.name}</span>
+                    <span className="file-size">{formatFileSize(file.size)}</span>
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '1rem' }}>
+                    <label>Project Title</label>
+                    <input
+                      type="text"
+                      value={title}
+                      onChange={(e) => setTitle(e.target.value)}
+                      placeholder="e.g. Portrait Drawing"
+                      className="edit-input"
+                    />
+                  </div>
+
+                  <div className="form-group" style={{ marginTop: '0.5rem' }}>
+                    <label>Description (optional)</label>
+                    <textarea
+                      value={description}
+                      onChange={(e) => setDescription(e.target.value)}
+                      placeholder="e.g. Convert portrait into anime style"
+                      rows="2"
+                      className="edit-textarea"
+                    />
+                  </div>
+
+                  <div className="file-actions">
+                    <button className="remove-file-btn" onClick={handleRemoveFile}>
+                      Remove
+                    </button>
+                    <button
+                      className="upload-btn"
+                      onClick={handleUpload}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? 'Uploading...' : 'Upload to AI'}
+                    </button>
+                  </div>
                 </div>
-                <div className="file-actions">
-                  <button 
-                    className="remove-file-btn"
-                    onClick={handleRemoveFile}
-                  >
-                    Remove
-                  </button>
-                  <button 
-                    className="upload-btn"
-                    onClick={handleUpload}
-                    disabled={isUploading}
-                  >
-                    {isUploading ? 'Uploading...' : 'Upload to AI'}
-                  </button>
-                </div>
-              </div>
-            )}
+              )}
 
             {/* Progress Bar */}
             {isUploading && (

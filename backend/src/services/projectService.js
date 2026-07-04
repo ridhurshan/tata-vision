@@ -17,6 +17,10 @@ exports.getProject = async (id) => {
     return results[0];
 };
 
+exports.getProjectsByUser = async (userId) => {   // ← new
+    return await Project.findByUserId(userId);
+};
+
 exports.updateProject = async (id, project) => {
     await Project.update(id, project);
     return { message: "Project updated successfully" };
