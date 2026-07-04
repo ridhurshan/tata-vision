@@ -1,0 +1,252 @@
+/* src/pages/ViewProject/ViewProject.css */
+
+.view-project-page {
+  background: #f7f7f9;
+  min-height: 100vh;
+  padding: 32px 24px 64px;
+}
+
+.view-project-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.view-project-loading,
+.view-project-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2f6fed;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+.btn-back-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #4b5563;
+  text-decoration: none;
+}
+
+.btn-back-link:hover {
+  color: #1f2937;
+}
+
+/* Processing Status Card */
+.processing-status-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+}
+
+.processing-status-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.processing-status-top h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.progress-percent {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2f6fed;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2f6fed;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.stage-pills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stage-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stage-pill.done {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+/* Section blocks */
+.section-block {
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px;
+}
+
+/* Stage cards row */
+.stage-cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stage-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stage-card:hover {
+  border-color: #93c5fd;
+}
+
+.stage-card.active {
+  border-color: #2f6fed;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
+}
+
+.stage-card-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.stage-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Drawing Stages 2x2 grid */
+.drawing-stages-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid #2f6fed;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.drawing-stages-header {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #1f2937;
+  padding: 16px 0 12px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.drawing-stages-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #e5e7eb;
+}
+
+.drawing-stage-cell {
+  position: relative;
+  cursor: pointer;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.drawing-stage-cell:nth-child(2n) {
+  border-right: none;
+}
+
+.drawing-stage-cell:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.drawing-stage-cell img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.drawing-stage-cell.active {
+  outline: 3px solid #2f6fed;
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.drawing-stage-caption {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #4b5563;
+  padding: 8px 6px;
+  background: #fafafa;
+}

@@ -1,6 +1,5 @@
 import { Routes, Route } from "react-router-dom";
 
-import Landing from "../pages/Landing";
 import Login from "../pages/Login";
 import Register from "../pages/Register";
 import Dashboard from "../pages/Dashboard";
@@ -9,11 +8,13 @@ import Upload from "../pages/Upload";
 import Profile from "../pages/Profile";
 import Admin from "../pages/Admin";
 import NotFound from "../pages/NotFound";
+import Landing from "../pages/Landing";
+import ViewProject from "../pages/ViewProject";
 
 export default function AppRoutes() {
   return (
     <Routes>
-      <Route path="/" element={<Landing />} />
+      <Route path="/" element={<Login />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/dashboard" element={<Dashboard />} />
@@ -21,7 +22,10 @@ export default function AppRoutes() {
       <Route path="/upload" element={<Upload />} />
       <Route path="/profile" element={<Profile />} />
       <Route path="/admin" element={<Admin />} />
+      <Route path="/landing" element={<Landing />} />
+      <Route path="/projects/:projectId" element={<ViewProject />} />
       <Route path="*" element={<NotFound />} />
+      
     </Routes>
   );
 }
