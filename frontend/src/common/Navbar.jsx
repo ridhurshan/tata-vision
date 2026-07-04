@@ -3,19 +3,19 @@ import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
 import './Navbar.css';
 import logoImage from '../../assets/drawai-logo.png';
+import { useAuth } from '../context/AuthContext';
+
+//const [isAuthenticated, setIsAuthenticated] = useState(false);
+
 
 const Navbar = () => {
-  const [isAuthenticated, setIsAuthenticated] = useState(true);
-  const [isMenuOpen, setIsMenuOpen] = useState(false);
-  const [isScrolled, setIsScrolled] = useState(false);
-  const navigate = useNavigate();
-  const location = useLocation();
+    const { user, logout } = useAuth();
+    const isAuthenticated = !!user;
+    const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [isScrolled, setIsScrolled] = useState(false);
+    const navigate = useNavigate();
+    const location = useLocation();
 
-  // Check authentication status
-  useEffect(() => {
-    const token = localStorage.getItem('token');
-    setIsAuthenticated(!!token);
-  }, []);
 
   // Handle scroll effect
   useEffect(() => {
@@ -26,11 +26,11 @@ const Navbar = () => {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    setIsAuthenticated(false);
-    navigate('/login');
-  };
+    const handleLogout = () => {
+      localStorage.removeItem('token');
+      setIsAuthenticated(false);
+      navigate('/login');
+    };
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
@@ -131,7 +131,7 @@ const Navbar = () => {
                 Admin
               </Link>
             </li>
-                                    <li>
+            <li>
               <Link 
                 to="/profile" 
                 className={`nav-link ${isActive('/profile') ? 'active' : ''}`}

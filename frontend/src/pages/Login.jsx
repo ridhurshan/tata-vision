@@ -5,8 +5,12 @@ import './Login.css';
 import logoImage from '../../assets/drawai-logo.png';
 import '../common/Navbar.css';
 import { loginUser } from "../services/authService";
+import { useAuth } from '../context/AuthContext';
 
 const Login = () => {
+
+  const { login } = useAuth();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
@@ -19,23 +23,8 @@ const Login = () => {
     setLoading(true);
 
     try {
-      // Add your login logic here
-      // const response = await api.post('/auth/login', { email, password });
-      // localStorage.setItem('token', response.data.token);
-      const response = await loginUser({
-          email,
-          password
-      });
-
-      localStorage.setItem("token", response.data.token);
-
-      navigate("/dashboard");
-      
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      console.log('Login:', { email, password });
-      
-      // Navigate to dashboard on success
+      const response = await loginUser({ email, password });
+      login(response.data.user, response.data.token); // <-- use context, not localStorage directly
       navigate('/dashboard');
     } catch (err) {
       setError('Invalid email or password');
