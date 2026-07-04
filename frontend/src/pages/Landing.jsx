@@ -6,7 +6,7 @@ import logoImage from '../../assets/drawai-logo.png';
 
 const Landing = () => {
   const navigate = useNavigate();
-  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [isAuthenticated, setIsAuthenticated] = useState(true);
 
   useEffect(() => {
     const token = localStorage.getItem('token');

@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 import logoImage from '../../assets/drawai-logo.png';
-
+import { registerUser } from "../services/authService";
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -37,7 +37,14 @@ const Register = () => {
     try {
       // Add your registration logic here
       // const response = await api.post('/auth/register', formData);
-      
+      await registerUser({
+          fullName: formData.fullName,
+          email: formData.email,
+          password: formData.password
+      });
+
+      navigate("/login");
+
       await new Promise(resolve => setTimeout(resolve, 1000));
       console.log('Register:', formData);
       

@@ -4,7 +4,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import './Login.css';
 import logoImage from '../../assets/drawai-logo.png';
 import '../common/Navbar.css';
-import Navbar from '../common/Navbar';
+import { loginUser } from "../services/authService";
 
 const Login = () => {
   const [email, setEmail] = useState('');
@@ -22,6 +22,14 @@ const Login = () => {
       // Add your login logic here
       // const response = await api.post('/auth/login', { email, password });
       // localStorage.setItem('token', response.data.token);
+      const response = await loginUser({
+          email,
+          password
+      });
+
+      localStorage.setItem("token", response.data.token);
+
+      navigate("/dashboard");
       
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 1000));
@@ -38,7 +46,7 @@ const Login = () => {
 
   return (
     <div className="auth-page">
-        <Navbar/>
+
       <div className="auth-container">
         <div className="auth-left">
           <div className="brand">
