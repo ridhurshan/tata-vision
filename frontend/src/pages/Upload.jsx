@@ -18,11 +18,6 @@ const Upload = () => {
   const fileInputRef = useRef(null);
   const navigate = useNavigate();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
-  };
-
   const handleDragEnter = (e) => {
     e.preventDefault();
     e.stopPropagation();
@@ -147,9 +142,11 @@ const Upload = () => {
   };
 
   return (
+    <>
+    <Navbar/>
     <div className="upload-page">
-        <Slidebar/>
-        <Navbar/>
+        
+        
         
       <div className="upload-container">
         {/* Header */}
@@ -160,9 +157,6 @@ const Upload = () => {
               Share your drawing and let AI transform it into amazing artwork
             </p>
           </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
         </div>
 
         <div className="upload-content">
@@ -291,9 +285,10 @@ const Upload = () => {
           
         </div>
       </div>
-      <Footer/>
+      
     </div>
-    
+    <Footer/>
+    </>
   );
 };
 
