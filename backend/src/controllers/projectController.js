@@ -55,6 +55,15 @@ exports.getProject = async (req, res) => {
 
 };
 
+exports.getProjectsByUser = async (req, res) => {   // ← new
+    try {
+        const result = await projectService.getProjectsByUser(req.params.userId);
+        res.json(result);
+    } catch (err) {
+        res.status(500).json({ message: err.message });
+    }
+};
+
 exports.updateProject = async (req, res) => {
 
     try {
