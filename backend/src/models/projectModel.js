@@ -23,6 +23,14 @@ const Project = {
         return rows;
     },
 
+    async findByUserId(userId) {           
+        const [rows] = await db.query(
+            "SELECT * FROM projects WHERE user_id = ? ORDER BY created_at DESC",
+            [userId]
+        );
+        return rows;
+    },
+
     async update(id, project) {
         const sql = `
             UPDATE projects

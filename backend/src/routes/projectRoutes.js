@@ -10,6 +10,8 @@ router.get("/", projectController.getProjects);
 
 router.get("/:id", projectController.getProject);
 
+router.get("/user/:userId", projectController.getProjectsByUser); 
+
 router.put("/:id", projectController.updateProject);
 
 router.delete("/:id", projectController.deleteProject);

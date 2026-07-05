@@ -2,121 +2,78 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import './Projects.css';
-
+import { useAuth } from '../context/AuthContext'; 
+import { getProjectsByUser,deleteProject } from '../services/projectService'; 
 const Projects = () => {
+  const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [filter, setFilter] = useState('all');
   const navigate = useNavigate();
 
-  // Sample project data
   useEffect(() => {
-    // Simulate API call
+    if (!user) {
+      navigate('/login');
+      return;
+    }
+
     const fetchProjects = async () => {
       setLoading(true);
+      setError('');
       try {
-        // Simulate API delay
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        // Sample projects data
-        const sampleProjects = [
-          {
-            id: 1,
-            title: 'Landscape Sketch',
-            date: 'February 15, 2024',
-            description: 'Beautiful mountain landscape transformed into digital art',
-            status: 'completed',
-            style: 'Realistic',
-            imageUrl: 'https://picsum.photos/200/300?random=1',
-            thumbnail: 'https://via.placeholder.com/200x150/6366f1/ffffff?text=Landscape'
-          },
-          {
-            id: 2,
-            title: 'Portrait Study',
-            date: 'February 10, 2024',
-            description: 'Detailed portrait study with artistic interpretation',
-            status: 'completed',
-            style: 'Abstract',
-            imageUrl: 'https://picsum.photos/200/300?random=2',
-            thumbnail: 'https://via.placeholder.com/200x150/8b5cf6/ffffff?text=Portrait'
-          },
-          {
-            id: 3,
-            title: 'Abstract Design',
-            date: 'February 5, 2024',
-            description: 'Abstract composition with vibrant colors and patterns',
-            status: 'processing',
-            style: 'Abstract',
-            imageUrl: 'https://picsum.photos/200/300?random=3',
-            thumbnail: 'https://via.placeholder.com/200x150/ec4899/ffffff?text=Abstract'
-          },
-          {
-            id: 4,
-            title: 'Nature Illustration',
-            date: 'January 28, 2024',
-            description: 'Nature scene with detailed flora and fauna',
-            status: 'completed',
-            style: 'Illustration',
-            imageUrl: 'https://picsum.photos/200/300?random=4',
-            thumbnail: 'https://via.placeholder.com/200x150/14b8a6/ffffff?text=Nature'
-          },
-          {
-            id: 5,
-            title: 'Cityscape Night',
-            date: 'January 20, 2024',
-            description: 'Night cityscape with neon lights and reflections',
-            status: 'completed',
-            style: 'Modern',
-            imageUrl: 'https://picsum.photos/200/300?random=5',
-            thumbnail: 'https://via.placeholder.com/200x150/f59e0b/ffffff?text=Cityscape'
-          },
-          {
-            id: 6,
-            title: 'Fantasy World',
-            date: 'January 15, 2024',
-            description: 'Fantasy landscape with mythical creatures and magic',
-            status: 'failed',
-            style: 'Fantasy',
-            imageUrl: 'https://picsum.photos/id/237/200/300?random=6',
-            thumbnail: 'https://via.placeholder.com/200x150/ef4444/ffffff?text=Fantasy'
-          }
-        ];
-        
-        setProjects(sampleProjects);
-      } catch (error) {
-        console.error('Error fetching projects:', error);
+        const response = await getProjectsByUser(user.id);
+        setProjects(response.data);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+        setError('Failed to load projects. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
     fetchProjects();
-  }, []);
+  }, [user, navigate]);
 
   const handleViewProject = (projectId) => {
-    navigate(`/project/${projectId}`);
+    navigate(`/projects/${projectId}`);
   };
 
-  const handleDeleteProject = async (projectId) => {
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      setProjects(projects.filter(project => project.id !== projectId));
-    }
-  };
+const handleDeleteProject = async (projectId) => {
+  if (!window.confirm('Are you sure you want to delete this project?')) {
+    return;
+  }
+
+  try {
+    await deleteProject(projectId);
+    setProjects(prev => prev.filter(project => project.id !== projectId));
+  } catch (err) {
+    console.error('Error deleting project:', err);
+    setError('Failed to delete project. Please try again.');
+  }
+};
 
   const getStatusBadge = (status) => {
     const statusMap = {
-      completed: { label: 'Completed', className: 'status-completed' },
-      processing: { label: 'Processing', className: 'status-processing' },
-      failed: { label: 'Failed', className: 'status-failed' },
-      draft: { label: 'Draft', className: 'status-draft' }
+      Completed: { label: 'Completed', className: 'status-completed' },
+      Processing: { label: 'Processing', className: 'status-processing' },
+      Failed: { label: 'Failed', className: 'status-failed' },
+      Waiting: { label: 'Waiting', className: 'status-draft' }
     };
-    return statusMap[status] || statusMap.draft;
+    return statusMap[status] || statusMap.Waiting;
+  };
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
   };
 
   const filteredProjects = projects.filter(project => {
-    const matchesSearch = project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          project.description.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      project.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      (project.description || '').toLowerCase().includes(searchTerm.toLowerCase());
     const matchesFilter = filter === 'all' || project.status === filter;
     return matchesSearch && matchesFilter;
   });
@@ -149,6 +106,8 @@ const Projects = () => {
           </div>
         </div>
 
+        {error && <div className="error-message">{error}</div>}
+
         {/* Filters */}
         <div className="projects-filters">
           <div className="search-wrapper">
@@ -173,27 +132,27 @@ const Projects = () => {
             )}
           </div>
           <div className="filter-tabs">
-            <button 
+            <button
               className={`filter-tab ${filter === 'all' ? 'active' : ''}`}
               onClick={() => setFilter('all')}
             >
               All
             </button>
-            <button 
-              className={`filter-tab ${filter === 'completed' ? 'active' : ''}`}
-              onClick={() => setFilter('completed')}
+            <button
+              className={`filter-tab ${filter === 'Completed' ? 'active' : ''}`}
+              onClick={() => setFilter('Completed')}
             >
               Completed
             </button>
-            <button 
-              className={`filter-tab ${filter === 'processing' ? 'active' : ''}`}
-              onClick={() => setFilter('processing')}
+            <button
+              className={`filter-tab ${filter === 'Processing' ? 'active' : ''}`}
+              onClick={() => setFilter('Processing')}
             >
               Processing
             </button>
-            <button 
-              className={`filter-tab ${filter === 'failed' ? 'active' : ''}`}
-              onClick={() => setFilter('failed')}
+            <button
+              className={`filter-tab ${filter === 'Failed' ? 'active' : ''}`}
+              onClick={() => setFilter('Failed')}
             >
               Failed
             </button>
@@ -215,7 +174,10 @@ const Projects = () => {
             {filteredProjects.map((project) => (
               <div key={project.id} className="project-card">
                 <div className="project-thumbnail">
-                  <img src={project.thumbnail} alt={project.title} />
+                  <img
+                    src={`https://via.placeholder.com/200x150/6366f1/ffffff?text=${encodeURIComponent(project.title)}`}
+                    alt={project.title}
+                  />
                   <span className={`status-badge ${getStatusBadge(project.status).className}`}>
                     {getStatusBadge(project.status).label}
                   </span>
@@ -223,14 +185,13 @@ const Projects = () => {
                 <div className="project-content">
                   <div className="project-info">
                     <h3>{project.title}</h3>
-                    <p className="project-description">{project.description}</p>
+                    <p className="project-description">{project.description || 'No description'}</p>
                     <div className="project-meta">
-                      <span className="project-date">{project.date}</span>
-                      <span className="project-style">{project.style}</span>
+                      <span className="project-date">{formatDate(project.created_at)}</span>
                     </div>
                   </div>
                   <div className="project-actions">
-                    <button 
+                    <button
                       className="btn-view"
                       onClick={() => handleViewProject(project.id)}
                     >
@@ -239,7 +200,7 @@ const Projects = () => {
                         <path d="M5 12h14M12 5l7 7-7 7" />
                       </svg>
                     </button>
-                    <button 
+                    <button
                       className="btn-delete"
                       onClick={() => handleDeleteProject(project.id)}
                     >
@@ -264,14 +225,14 @@ const Projects = () => {
             <div className="stat-divider"></div>
             <div className="stat-item">
               <span className="stat-number">
-                {projects.filter(p => p.status === 'completed').length}
+                {projects.filter(p => p.status === 'Completed').length}
               </span>
               <span className="stat-label">Completed</span>
             </div>
             <div className="stat-divider"></div>
             <div className="stat-item">
               <span className="stat-number">
-                {projects.filter(p => p.status === 'processing').length}
+                {projects.filter(p => p.status === 'Processing').length}
               </span>
               <span className="stat-label">In Progress</span>
             </div>
