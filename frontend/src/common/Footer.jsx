@@ -1,7 +1,7 @@
 // src/components/common/Footer.jsx
 import React from 'react';
 import { Link } from 'react-router-dom';
-import './Footer.css';
+import '../styles/Footer.css';
 import logoImage from '../../assets/drawai-logo.png';
 const Footer = () => {
   const currentYear = new Date().getFullYear();

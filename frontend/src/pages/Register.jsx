@@ -1,7 +1,7 @@
 // src/pages/Register/index.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Login.css';
+import '../styles/Login.css';
 import logoImage from '../../assets/drawai-logo.png';
 import { registerUser } from "../services/authService";
 

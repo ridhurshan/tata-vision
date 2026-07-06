@@ -1,7 +1,7 @@
 // src/pages/Upload/index.jsx
 import React, { useState, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Dashboard.css';
+import '../styles/Dashboard.css';
 import '../common/Navbar';
 import Navbar from '../common/Navbar';
 

@@ -1,12 +1,9 @@
 // src/components/common/Navbar.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import './Navbar.css';
+import '../styles/Navbar.css';
 import logoImage from '../../assets/drawai-logo.png';
 import { useAuth } from '../context/AuthContext';
-
-//const [isAuthenticated, setIsAuthenticated] = useState(false);
-
 
 const Navbar = () => {
     const { user, logout } = useAuth();

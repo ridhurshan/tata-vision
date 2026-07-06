@@ -1,7 +1,7 @@
 // src/pages/Login/index.jsx
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Login.css';
+import '../styles/Login.css';
 import logoImage from '../../assets/drawai-logo.png';
 import '../common/Navbar.css';
 import { loginUser } from "../services/authService";
