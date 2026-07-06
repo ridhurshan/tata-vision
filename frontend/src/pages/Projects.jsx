@@ -4,6 +4,9 @@ import { Link, useNavigate } from 'react-router-dom';
 import './Projects.css';
 import { useAuth } from '../context/AuthContext'; 
 import { getProjectsByUser,deleteProject } from '../services/projectService'; 
+import Navbar from '../common/Navbar';
+import Footer from '../common/Footer';
+
 const Projects = () => {
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
@@ -88,6 +91,8 @@ const handleDeleteProject = async (projectId) => {
   }
 
   return (
+    <>
+    <Navbar/>
     <div className="projects-page">
       <div className="projects-container">
         {/* Header */}
@@ -240,6 +245,8 @@ const handleDeleteProject = async (projectId) => {
         )}
       </div>
     </div>
+    <Footer />
+    </>
   );
 };
 

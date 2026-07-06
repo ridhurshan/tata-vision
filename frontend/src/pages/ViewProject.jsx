@@ -3,6 +3,8 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import './ViewProject.css';
 import { getProject } from '../services/projectService'; // adjust path if needed
+import Footer from '../common/Footer';
+import Navbar from '../common/Navbar';
 
 const ViewProject = () => {
   const { projectId } = useParams();
@@ -84,6 +86,8 @@ const ViewProject = () => {
   ];
 
   return (
+    <>
+    <Navbar/>
     <div className="view-project-page">
       <div className="view-project-container">
 
@@ -186,6 +190,8 @@ const ViewProject = () => {
 
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

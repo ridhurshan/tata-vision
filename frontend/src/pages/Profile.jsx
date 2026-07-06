@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import './Profile.css';
 import Footer from '../common/Footer';
 import { useAuth } from '../context/AuthContext';
+import Navbar from '../common/Navbar';
 //import Navbar from '../common/Navbar';  
 
 const Profile = () => {
@@ -123,6 +124,8 @@ const Profile = () => {
   if (!user) return null;
 
   return (
+    <>
+    <Navbar/>
     <div className="profile-page">
       <div className="profile-container">
         <div className="profile-header">
@@ -379,6 +382,8 @@ const Profile = () => {
         {isEditing && <Footer />}
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 
