@@ -1,7 +1,9 @@
 // src/pages/Admin/index.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Admin.css';
+import '../styles/Admin.css';
+import Navbar from '../common/Navbar';
+import Footer from '../common/Footer';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -105,6 +107,8 @@ const Admin = () => {
   }
 
   return (
+    <>
+    <Navbar/>
     <div className="admin-page">
       <div className="admin-container">
         {/* Header */}
@@ -432,6 +436,8 @@ const Admin = () => {
         </div>
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

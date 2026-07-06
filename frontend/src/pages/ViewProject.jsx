@@ -1,72 +1,29 @@
 // src/pages/ViewProject/index.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import './ViewProject.css';
+import '../styles/ViewProject.css';
+import { getProject } from '../services/projectService'; 
+import Footer from '../common/Footer';
+import Navbar from '../common/Navbar';
 
 const ViewProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState('');
   const [activeStage, setActiveStage] = useState(1);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [processingProgress, setProcessingProgress] = useState(0);
 
   useEffect(() => {
     const fetchProject = async () => {
       setLoading(true);
+      setError('');
       try {
-        await new Promise(resolve => setTimeout(resolve, 800));
-
-        const sampleProject = {
-          id: parseInt(projectId),
-          title: 'Processing Your Artwork',
-          subtitle: 'Watch as AI transforms your sketch',
-          date: 'February 15, 2024',
-          status: 'completed',
-          style: 'Realistic',
-          stages: [
-            {
-              id: 1,
-              name: 'Stage 1: Geometric Foundation',
-              image: 'https://picsum.photos/200/300?random',
-              status: 'completed'
-            },
-            {
-              id: 2,
-              name: 'Stage 2: Contour Line-work',
-              image: 'https://picsum.photos/200/300?random',
-              status: 'completed'
-            },
-            {
-              id: 3,
-              name: 'Stage 3: Shaded Study (Monochrome)',
-              image: 'https://picsum.photos/200/300?random',
-              status: 'completed'
-            },
-            {
-              id: 4,
-              name: 'Stage 4: Color Painting (Final)',
-              image: 'https://picsum.photos/200/300?random',
-              status: 'completed'
-            }
-          ],
-          processingStages: [
-            { id: 1, name: 'Sketch Analysis' },
-            { id: 2, name: 'Enhancement' },
-            { id: 3, name: 'Refinement' },
-            { id: 4, name: 'Finalization' }
-          ]
-        };
-
-        setProject(sampleProject);
-        setProcessingProgress(100);
-
-        if (sampleProject.status === 'processing') {
-          setIsProcessing(true);
-        }
-      } catch (error) {
-        console.error('Error fetching project:', error);
+        const response = await getProject(projectId);
+        setProject(response.data);
+      } catch (err) {
+        console.error('Error fetching project:', err);
+        setError('Project not found.');
       } finally {
         setLoading(false);
       }
@@ -74,6 +31,12 @@ const ViewProject = () => {
 
     fetchProject();
   }, [projectId]);
+
+  const formatDate = (dateString) => {
+    if (!dateString) return '';
+    const date = new Date(dateString);
+    return date.toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
+  };
 
   const handleDownload = () => {
     alert('Downloading as PDF...');
@@ -92,7 +55,7 @@ const ViewProject = () => {
     );
   }
 
-  if (!project) {
+  if (error || !project) {
     return (
       <div className="view-project-error">
         <h2>Project not found</h2>
@@ -101,7 +64,30 @@ const ViewProject = () => {
     );
   }
 
+  const progressPercent = project.status === 'Completed' ? 100
+    : project.status === 'Processing' ? 50
+    : project.status === 'Failed' ? 0
+    : 10; // Waiting
+
+  const processingStages = [
+    { id: 1, name: 'Sketch Analysis' },
+    { id: 2, name: 'Enhancement' },
+    { id: 3, name: 'Refinement' },
+    { id: 4, name: 'Finalization' }
+  ];
+
+  // Placeholder stage images — not real AI output yet, just UI filler
+  // seeded by project.id so they stay consistent per project on refresh
+  const dummyStages = [
+    { id: 1, name: 'Stage 1: Geometric Foundation', image: `https://picsum.photos/seed/${project.id}-1/300/220` },
+    { id: 2, name: 'Stage 2: Contour Line-work', image: `https://picsum.photos/seed/${project.id}-2/300/220` },
+    { id: 3, name: 'Stage 3: Shaded Study (Monochrome)', image: `https://picsum.photos/seed/${project.id}-3/300/220` },
+    { id: 4, name: 'Stage 4: Color Painting (Final)', image: `https://picsum.photos/seed/${project.id}-4/300/220` }
+  ];
+
   return (
+    <>
+    <Navbar/>
     <div className="view-project-page">
       <div className="view-project-container">
 
@@ -109,7 +95,7 @@ const ViewProject = () => {
         <div className="page-header">
           <div>
             <h1>{project.title}</h1>
-            <p className="page-subtitle">{project.subtitle}</p>
+            <p className="page-subtitle">{project.description || 'No description provided'}</p>
           </div>
           <Link to="/projects" className="btn-back-link">
             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
@@ -119,21 +105,23 @@ const ViewProject = () => {
           </Link>
         </div>
 
+        <p className="project-meta-date">Created: {formatDate(project.created_at)}</p>
+
         {/* Processing Status Card */}
         <div className="processing-status-card">
           <div className="processing-status-top">
             <h3>Processing Status</h3>
-            <span className="progress-percent">{processingProgress}%</span>
+            <span className="progress-percent">{project.status}</span>
           </div>
           <div className="progress-bar">
             <div
               className="progress-fill"
-              style={{ width: `${processingProgress}%` }}
+              style={{ width: `${progressPercent}%` }}
             />
           </div>
           <div className="stage-pills">
-            {project.processingStages.map((stage) => {
-              const done = processingProgress >= 100;
+            {processingStages.map((stage) => {
+              const done = progressPercent >= (stage.id * 25);
               return (
                 <div key={stage.id} className={`stage-pill ${done ? 'done' : ''}`}>
                   {done && (
@@ -148,13 +136,13 @@ const ViewProject = () => {
           </div>
         </div>
 
-        {/* Final Output - 2x2 stage grid */}
+        {/* Final Output - 2x2 dummy stage grid (placeholder until image pipeline is built) */}
         <div className="section-block">
           <h3 className="section-title">Final Output</h3>
           <div className="drawing-stages-card">
-            <div className="drawing-stages-header">DRAWING STAGES</div>
+            <div className="drawing-stages-header">DRAWING STAGES (PREVIEW)</div>
             <div className="drawing-stages-grid">
-              {project.stages.map((stage) => (
+              {dummyStages.map((stage) => (
                 <div
                   key={stage.id}
                   className={`drawing-stage-cell ${activeStage === stage.id ? 'active' : ''}`}
@@ -171,33 +159,39 @@ const ViewProject = () => {
         </div>
 
         {/* Final Artwork bar */}
-        <div className="final-artwork-bar">
-          <div>
-            <h4>Final Artwork</h4>
-            <p>Your completed piece is ready to download</p>
+        {project.status === 'Completed' && (
+          <div className="final-artwork-bar">
+            <div>
+              <h4>Final Artwork</h4>
+              <p>Your completed piece is ready to download</p>
+            </div>
+            <button className="btn-download-pdf" onClick={handleDownload}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
+                <polyline points="7 10 12 15 17 10" />
+                <line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download PDF
+            </button>
           </div>
-          <button className="btn-download-pdf" onClick={handleDownload}>
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-              <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-              <polyline points="7 10 12 15 17 10" />
-              <line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download PDF
-          </button>
-        </div>
+        )}
 
         {/* Bottom Actions */}
         <div className="bottom-actions">
           <button className="btn-outline" onClick={handleUploadAnother}>
             Upload Another Sketch
           </button>
-          <button className="btn-primary" onClick={handleDownload}>
-            Download as PDF
-          </button>
+          {project.status === 'Completed' && (
+            <button className="btn-primary" onClick={handleDownload}>
+              Download as PDF
+            </button>
+          )}
         </div>
 
       </div>
     </div>
+    <Footer/>
+    </>
   );
 };
 

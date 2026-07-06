@@ -1,7 +1,7 @@
 // src/components/common/Sidebar.jsx
 import React, { useState, useEffect } from 'react';
 import { NavLink, useNavigate, useLocation } from 'react-router-dom';
-import './Sidebar.css';
+import '../styles/Sidebar.css';
 import logoImage from '../../assets/drawai-logo.png';
 
 const Sidebar = () => {
