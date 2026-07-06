@@ -1,7 +1,7 @@
 // src/pages/Projects/index.jsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import './Projects.css';
+import '../styles/Projects.css';
 import { useAuth } from '../context/AuthContext'; 
 import { getProjectsByUser,deleteProject } from '../services/projectService'; 
 import Navbar from '../common/Navbar';

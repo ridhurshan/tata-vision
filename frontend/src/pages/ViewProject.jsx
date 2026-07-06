@@ -1,8 +1,8 @@
 // src/pages/ViewProject/index.jsx
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import './ViewProject.css';
-import { getProject } from '../services/projectService'; // adjust path if needed
+import '../styles/ViewProject.css';
+import { getProject } from '../services/projectService'; 
 import Footer from '../common/Footer';
 import Navbar from '../common/Navbar';
 

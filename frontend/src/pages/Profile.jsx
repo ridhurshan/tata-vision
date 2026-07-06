@@ -1,7 +1,7 @@
 // src/pages/Profile/index.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import './Profile.css';
+import '../styles/Profile.css';
 import Footer from '../common/Footer';
 import { useAuth } from '../context/AuthContext';
 import Navbar from '../common/Navbar';
