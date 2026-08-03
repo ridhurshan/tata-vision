@@ -8,8 +8,17 @@ async function initializeDatabase() {
                 full_name VARCHAR(150) NOT NULL,
                 email VARCHAR(255) NOT NULL UNIQUE,
                 password VARCHAR(255) NOT NULL,
-                role VARCHAR(50) DEFAULT 'user',
-                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                role VARCHAR(50) NOT NULL DEFAULT 'user',
+
+                is_verified BOOLEAN NOT NULL DEFAULT FALSE,
+                verification_code VARCHAR(64) NULL,
+                verification_expires_at DATETIME NULL,
+                verification_attempts INT NOT NULL DEFAULT 0,
+                last_code_sent_at DATETIME NULL,
+
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+                    ON UPDATE CURRENT_TIMESTAMP
             )
         `);
 
