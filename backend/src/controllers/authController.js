@@ -1,37 +1,51 @@
-const authService=require("../services/authService");
+const authService = require("../services/authService");
 
-exports.register=async(req,res)=>{
+function sendError(res, err, defaultStatus = 500) {
+    console.error(err);
 
-    try{
+    res.status(err.statusCode || defaultStatus).json({
+        message: err.message || "Something went wrong.",
+        code: err.code || undefined
+    });
+}
 
-        const result=await authService.register(req.body);
+exports.register = async (req, res) => {
+    try {
+        const result = await authService.register(req.body);
 
         res.status(201).json(result);
-
-    }catch(err){
-
-        res.status(400).json({
-            message:err.message
-        });
-
+    } catch (err) {
+        sendError(res, err);
     }
+};
 
-}
+exports.verifyEmail = async (req, res) => {
+    try {
+        const result = await authService.verifyEmail(req.body);
 
-exports.login=async(req,res)=>{
-
-    try{
-
-        const result=await authService.login(req.body);
-
-        res.json(result);
-
-    }catch(err){
-
-        res.status(401).json({
-            message:err.message
-        });
-
+        res.status(200).json(result);
+    } catch (err) {
+        sendError(res, err);
     }
+};
 
-}
+exports.resendVerificationCode = async (req, res) => {
+    try {
+        const result =
+            await authService.resendVerificationCode(req.body);
+
+        res.status(200).json(result);
+    } catch (err) {
+        sendError(res, err);
+    }
+};
+
+exports.login = async (req, res) => {
+    try {
+        const result = await authService.login(req.body);
+
+        res.status(200).json(result);
+    } catch (err) {
+        sendError(res, err);
+    }
+};
