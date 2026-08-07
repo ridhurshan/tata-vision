@@ -5,7 +5,7 @@ import {
   useNavigate,
 } from "react-router-dom";
 import "../styles/Login.css";
-import logoImage from "../assets/drawai-logo.png";
+import logoImage from "../../assets/drawai-logo.png";
 import {
   resendVerificationCode,
   verifyEmail,

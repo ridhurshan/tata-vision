@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import "../styles/Login.css";
-import logoImage from "../assets/drawai-logo.png";
+//import logoImage from "../assets/drawai-logo.png";
+import logoImage from '../../assets/drawai-logo.png';
 import { registerUser } from "../services/authService";
 
 const Register = () => {
