@@ -251,3 +251,374 @@
   padding: 8px 6px;
   background: #fafafa;
 }
+
+/* =========================================================
+   CLICKABLE DRAWING STAGE IMAGES
+   ========================================================= */
+
+.drawing-stage-cell {
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+
+  color: inherit;
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.drawing-stage-cell:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.17);
+}
+
+.drawing-stage-cell.active {
+  border-color: #6c63ff;
+}
+
+.drawing-stage-cell:focus-visible {
+  outline: 3px solid rgba(108, 99, 255, 0.35);
+  outline-offset: 3px;
+}
+
+.drawing-stage-image-wrapper {
+  position: relative;
+
+  width: 100%;
+  aspect-ratio: 4 / 3;
+
+  overflow: hidden;
+  background-color: #e5e7eb;
+}
+
+.drawing-stage-image-wrapper img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+  object-fit: cover;
+
+  transition: transform 0.35s ease;
+}
+
+.drawing-stage-cell:hover .drawing-stage-image-wrapper img {
+  transform: scale(1.05);
+}
+
+.drawing-stage-hover-overlay {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background-color: rgba(15, 23, 42, 0.62);
+  color: #ffffff;
+
+  opacity: 0;
+
+  transition: opacity 0.25s ease;
+}
+
+.drawing-stage-hover-overlay span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.drawing-stage-cell:hover .drawing-stage-hover-overlay,
+.drawing-stage-cell:focus-visible .drawing-stage-hover-overlay {
+  opacity: 1;
+}
+
+
+/* =========================================================
+   FULL-SCREEN IMAGE LIGHTBOX
+   ========================================================= */
+
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  background-color: rgba(3, 7, 18, 0.88);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+
+  animation: lightboxBackgroundOpen 0.2s ease;
+}
+
+.image-lightbox-content {
+  position: relative;
+
+  width: min(1100px, 94vw);
+  max-height: 92vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background-color: #ffffff;
+  border-radius: 18px;
+
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+
+  animation: lightboxContentOpen 0.25s ease;
+}
+
+.image-lightbox-image-wrapper {
+  width: 100%;
+  min-height: 300px;
+  max-height: 72vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  background-color: #111827;
+}
+
+.image-lightbox-image {
+  width: 100%;
+  height: 100%;
+  max-height: 72vh;
+
+  display: block;
+  object-fit: contain;
+}
+
+.image-lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+
+  background-color: rgba(15, 23, 42, 0.78);
+  color: #ffffff;
+
+  font-size: 31px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.image-lightbox-close:hover {
+  background-color: rgba(220, 38, 38, 0.92);
+  transform: rotate(90deg);
+}
+
+.image-lightbox-close:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 3px;
+}
+
+.image-lightbox-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 18px 22px;
+
+  background-color: #ffffff;
+}
+
+.image-lightbox-stage-number {
+  margin: 0 0 4px;
+
+  color: #6c63ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.image-lightbox-caption {
+  margin: 0;
+
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.image-lightbox-done {
+  flex-shrink: 0;
+
+  padding: 10px 18px;
+
+  border: none;
+  border-radius: 8px;
+
+  background-color: #6c63ff;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.image-lightbox-done:hover {
+  background-color: #574fd6;
+  transform: translateY(-1px);
+}
+
+.image-lightbox-done:focus-visible {
+  outline: 3px solid rgba(108, 99, 255, 0.35);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   LIGHTBOX ANIMATIONS
+   ========================================================= */
+
+@keyframes lightboxBackgroundOpen {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lightboxContentOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+/* =========================================================
+   TABLET RESPONSIVE
+   ========================================================= */
+
+@media screen and (max-width: 768px) {
+  .image-lightbox {
+    padding: 18px;
+  }
+
+  .image-lightbox-content {
+    width: 100%;
+    max-height: 94vh;
+
+    border-radius: 14px;
+  }
+
+  .image-lightbox-image-wrapper {
+    max-height: 70vh;
+  }
+
+  .image-lightbox-image {
+    max-height: 70vh;
+  }
+
+  .image-lightbox-bottom {
+    padding: 15px 17px;
+  }
+
+  .image-lightbox-caption {
+    font-size: 16px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE RESPONSIVE
+   ========================================================= */
+
+@media screen and (max-width: 520px) {
+  .image-lightbox {
+    padding: 10px;
+  }
+
+  .image-lightbox-content {
+    max-height: 96vh;
+
+    border-radius: 12px;
+  }
+
+  .image-lightbox-image-wrapper {
+    min-height: 230px;
+    max-height: 72vh;
+  }
+
+  .image-lightbox-image {
+    max-height: 72vh;
+  }
+
+  .image-lightbox-close {
+    top: 9px;
+    right: 9px;
+
+    width: 38px;
+    height: 38px;
+
+    font-size: 27px;
+  }
+
+  .image-lightbox-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+
+    padding: 14px;
+  }
+
+  .image-lightbox-done {
+    width: 100%;
+  }
+
+  .drawing-stage-hover-overlay {
+    display: none;
+  }
+}
