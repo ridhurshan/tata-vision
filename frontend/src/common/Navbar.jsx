@@ -44,7 +44,11 @@ const Navbar = () => {
     <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
       <div className="navbar-container">
         {/* Brand/Logo */}
-        <Link to="/" className="navbar-brand" onClick={closeMenu}>
+              <Link 
+                to="/Landing" 
+                className={`nav-link ${isActive('/Landing') ? 'active' : ''}`}
+                onClick={closeMenu}
+              >
           <img 
             src={logoImage} 
             alt="DrawAI Logo" 
@@ -83,25 +87,7 @@ const Navbar = () => {
                 Home
               </Link>
             </li>
-                        <li>
-              <Link 
-                to="/Upload" 
-                className={`nav-link ${isActive('/') ? 'active' : ''}`}
-                onClick={closeMenu}
-              >
-                Upload
-              </Link>
-            </li>
-                        <li>
-              <Link 
-                to="/Landing" 
-                className={`nav-link ${isActive('/Landing') ? 'active' : ''}`}
-                onClick={closeMenu}
-              >
-                Landing
-              </Link>
-            </li>
-                        <li>
+            <li>
               <Link 
                 to="/Projects" 
                 className={`nav-link ${isActive('/') ? 'active' : ''}`}
@@ -110,7 +96,7 @@ const Navbar = () => {
                 Projects
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link 
                 to="/projects/1" 
                 className={`nav-link ${isActive('/projects/1') ? 'active' : ''}`}
@@ -118,7 +104,7 @@ const Navbar = () => {
               >
                 ViewProject
               </Link>
-            </li>
+            </li> */}
                         <li>
               <Link 
                 to="/admin" 
@@ -137,7 +123,7 @@ const Navbar = () => {
                 Profile
               </Link>
             </li>
-                                                <li>
+            {/* <li>
               <Link 
                 to="/notfound" 
                 className={`nav-link ${isActive('/notfound') ? 'active' : ''}`}
@@ -145,7 +131,7 @@ const Navbar = () => {
               >
                 NotFound
               </Link>
-            </li>
+            </li> */}
             
             {isAuthenticated ? (
               <>
