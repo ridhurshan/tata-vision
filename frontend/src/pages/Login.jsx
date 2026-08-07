@@ -26,8 +26,23 @@ const Login = () => {
       const response = await loginUser({ email, password });
       login(response.data.user, response.data.token); // <-- use context, not localStorage directly
       navigate('/dashboard');
-    } catch (err) {
-      setError('Invalid email or password');
+    } catch (error) {
+      const message =
+        error.response?.data?.message ||
+        "Login failed. Please try again.";
+
+      setError(message);
+
+      if (
+        error.response?.status === 403 &&
+        error.response?.data?.code === "EMAIL_NOT_VERIFIED"
+      ) {
+        navigate("/verify-email", {
+          state: {
+            email: email.trim().toLowerCase(),
+          },
+        });
+      }
     } finally {
       setLoading(false);
     }

@@ -10,6 +10,7 @@ import Admin from "../pages/Admin";
 import NotFound from "../pages/NotFound";
 import Landing from "../pages/Landing";
 import ViewProject from "../pages/ViewProject";
+import VerifyEmail from "../pages/VerifyEmail";
 
 export default function AppRoutes() {
   return (
@@ -17,6 +18,7 @@ export default function AppRoutes() {
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/verify-email" element={<VerifyEmail />} />
       <Route path="/dashboard" element={<Dashboard />} />
       <Route path="/projects" element={<Projects />} />
       <Route path="/upload" element={<Upload />} />
