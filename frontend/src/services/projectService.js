@@ -1,7 +1,20 @@
 import api from "./api";
 
-export const createProject = (data) => {
-  return api.post("/projects", data);
+export const createProject = (
+    formData
+) => {
+
+    return api.post(
+        "/projects",
+        formData,
+        {
+            headers: {
+                "Content-Type":
+                    "multipart/form-data"
+            }
+        }
+    );
+
 };
 
 export const getProjects = () => {
