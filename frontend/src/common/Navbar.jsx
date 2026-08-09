@@ -8,10 +8,12 @@ import { useAuth } from '../context/AuthContext';
 const Navbar = () => {
     const { user, logout } = useAuth();
     const isAuthenticated = !!user;
+    const isAdmin = user?.role === 'ADMIN';
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+
 
 
   // Handle scroll effect
@@ -105,15 +107,17 @@ const Navbar = () => {
                 ViewProject
               </Link>
             </li> */}
-                        <li>
-              <Link 
-                to="/admin" 
-                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-                onClick={closeMenu}
-              >
-                Admin
-              </Link>
-            </li>
+            {isAdmin && (
+              <li>
+                <Link
+                  to="/admin"
+                  className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                  onClick={closeMenu}
+                >
+                  Admin
+                </Link>
+              </li>
+            )}
             <li>
               <Link 
                 to="/profile" 
