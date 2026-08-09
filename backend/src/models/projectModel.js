@@ -50,7 +50,6 @@ const Project = {
     },
 
     async updateAIOutputs(id, outputs) {
-
         const sql = `
             UPDATE projects
             SET
@@ -71,6 +70,20 @@ const Project = {
                 outputs.colouring_image,
                 id
             ]
+        );
+
+        return result;
+    },
+
+
+    async updateStatus(id, status) {
+        const [result] = await db.query(
+            `
+            UPDATE projects
+            SET status = ?
+            WHERE id = ?
+            `,
+            [status, id]
         );
 
         return result;
