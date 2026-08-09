@@ -3,22 +3,33 @@ const db = require("./db");
 async function initializeDatabase() {
     try {
         await db.query(`
-            CREATE TABLE IF NOT EXISTS users (
+            CREATE TABLE IF NOT EXISTS projects (
                 id INT AUTO_INCREMENT PRIMARY KEY,
-                full_name VARCHAR(150) NOT NULL,
-                email VARCHAR(255) NOT NULL UNIQUE,
-                password VARCHAR(255) NOT NULL,
-                role VARCHAR(50) NOT NULL DEFAULT 'user',
 
-                is_verified BOOLEAN NOT NULL DEFAULT FALSE,
-                verification_code VARCHAR(64) NULL,
-                verification_expires_at DATETIME NULL,
-                verification_attempts INT NOT NULL DEFAULT 0,
-                last_code_sent_at DATETIME NULL,
+                user_id INT NOT NULL,
+
+                title VARCHAR(255) NOT NULL,
+
+                description TEXT NULL,
+
+                status VARCHAR(50) NOT NULL DEFAULT 'Waiting',
 
                 created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-                updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-                    ON UPDATE CURRENT_TIMESTAMP
+
+                input_image VARCHAR(500) NULL,
+
+                geometric_image VARCHAR(500) NULL,
+
+                curve_image VARCHAR(500) NULL,
+
+                shading_image VARCHAR(500) NULL,
+
+                colouring_image VARCHAR(500) NULL,
+
+                CONSTRAINT fk_projects_user
+                    FOREIGN KEY (user_id)
+                    REFERENCES users(id)
+                    ON DELETE CASCADE
             )
         `);
 
