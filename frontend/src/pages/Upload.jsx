@@ -8,7 +8,6 @@ import Footer from '../common/Footer';
 import { useAuth } from '../context/AuthContext'; 
 import { createProject } from '../services/projectService'; 
 
-
 const Upload = () => {
   const { user } = useAuth();
   const [file, setFile] = useState(null);
@@ -116,28 +115,108 @@ const Upload = () => {
       setUploadProgress((prev) => (prev < 90 ? prev + 10 : prev));
     }, 200);
 
-    try {
-      const response = await createProject({
-        user_id: user.id,
-        title,
-        description
-      });
+      try {
 
-      clearInterval(interval);
-      setUploadProgress(100);
-      setSuccess('Project created successfully! AI is processing your artwork...');
-      console.log('Created project:', response.data);
+          // ==============================================
+          // BUILD MULTIPART FORM DATA
+          // ==============================================
 
-      // navigate to the new project's page after a short pause
-      setTimeout(() => {
-        navigate(`/projects/${response.data.projectId}`);
-      }, 1200);
+          const formData =
+              new FormData();
 
-    } catch (err) {
-      clearInterval(interval);
-      setIsUploading(false);
-      setError(err.response?.data?.message || 'Upload failed. Please try again.');
-    }
+
+          formData.append(
+              "image",
+              file
+          );
+
+
+          formData.append(
+              "user_id",
+              user.id
+          );
+
+
+          formData.append(
+              "title",
+              title
+          );
+
+
+          formData.append(
+              "description",
+              description
+          );
+
+
+          // ==============================================
+          // SEND PROJECT + IMAGE
+          // ==============================================
+
+          const response =
+              await createProject(
+                  formData
+              );
+
+
+          clearInterval(
+              interval
+          );
+
+
+          setUploadProgress(
+              100
+          );
+
+
+          setSuccess(
+              "Project created successfully! AI is processing your artwork..."
+          );
+
+
+          console.log(
+              "Created project:",
+              response.data
+          );
+
+
+          // ==============================================
+          // OPEN NEW PROJECT
+          // ==============================================
+
+          setTimeout(() => {
+
+              navigate(
+                  `/projects/${response.data.projectId}`
+              );
+
+          }, 1200);
+
+
+      } catch (err) {
+
+          clearInterval(
+              interval
+          );
+
+
+          setIsUploading(
+              false
+          );
+
+
+          console.error(
+              "Upload error:",
+              err
+          );
+
+
+          setError(
+              err.response?.data?.message ||
+              "Upload failed. Please try again."
+          );
+
+      }
   };
 
   const handleRemoveFile = () => {
