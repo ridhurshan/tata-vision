@@ -27,13 +27,30 @@ const ViewProject = () => {
       setError('');
 
       try {
-        const response = await getProject(projectId);
-        setProject(response.data);
+
+          const response = await getProject(projectId);
+
+          console.log(
+              "PROJECT RECEIVED FROM BACKEND:",
+              response.data
+          );
+
+          setProject(response.data);
+
       } catch (err) {
-        console.error('Error fetching project:', err);
-        setError('Project not found.');
+
+          console.error(
+              'Error fetching project:',
+              err
+          );
+
+          setError(
+              'Project not found.'
+          );
+
       } finally {
-        setLoading(false);
+
+          setLoading(false);
       }
     };
 
@@ -82,14 +99,19 @@ const ViewProject = () => {
     navigate('/upload');
   };
 
-  const handleStageClick = (stage) => {
-    setActiveStage(stage.id);
-    setSelectedStage(stage);
-  };
-
   const closeLightbox = () => {
     setSelectedStage(null);
   };
+
+  const handleStageClick = (stage) => {
+
+    if (!stage.image) {
+        return;
+    }
+
+    setActiveStage(stage.id);
+    setSelectedStage(stage);
+};
 
   if (loading) {
     return (
@@ -121,49 +143,54 @@ const ViewProject = () => {
           ? 0
           : 10;
 
-  const processingStages = [
-    {
-      id: 1,
-      name: 'Sketch Analysis',
-    },
-    {
-      id: 2,
-      name: 'Enhancement',
-    },
-    {
-      id: 3,
-      name: 'Refinement',
-    },
-    {
-      id: 4,
-      name: 'Finalization',
-    },
-  ];
+      const processingStages = [
+          { id: 1, name: 'Geometric Shapes' },
+          { id: 2, name: 'Curves' },
+          { id: 3, name: 'Shading' },
+          { id: 4, name: 'Colouring Guide' },
+      ];
 
   // Temporary images until real AI output is connected.
   // These URLs use larger images so they do not become too blurry
   // when shown inside the enlarged preview.
-  const dummyStages = [
-    {
-      id: 1,
-      name: 'Stage 1: Geometric Foundation',
-      image: `https://picsum.photos/seed/${project.id}-1/1200/900`,
-    },
-    {
-      id: 2,
-      name: 'Stage 2: Contour Line-work',
-      image: `https://picsum.photos/seed/${project.id}-2/1200/900`,
-    },
-    {
-      id: 3,
-      name: 'Stage 3: Shaded Study (Monochrome)',
-      image: `https://picsum.photos/seed/${project.id}-3/1200/900`,
-    },
-    {
-      id: 4,
-      name: 'Stage 4: Color Painting (Final)',
-      image: `https://picsum.photos/seed/${project.id}-4/1200/900`,
-    },
+ const BACKEND_URL = 'http://localhost:5000';
+
+  const drawingStages = [
+      {
+          id: 1,
+          name: 'Geometric Shape Extraction',
+          description: 'Basic geometric structure extracted from the reference image.',
+          image: project.geometric_image
+              ? `${BACKEND_URL}${project.geometric_image}`
+              : null,
+      },
+
+      {
+          id: 2,
+          name: 'Curve Extraction',
+          description: 'Refined curves and contour lines extracted from the image.',
+          image: project.curve_image
+              ? `${BACKEND_URL}${project.curve_image}`
+              : null,
+      },
+
+      {
+          id: 3,
+          name: 'Pencil Shading',
+          description: 'Pencil shading generated using reference-image light and shadow.',
+          image: project.shading_image
+              ? `${BACKEND_URL}${project.shading_image}`
+              : null,
+      },
+
+      {
+          id: 4,
+          name: 'Number & Colour Guide',
+          description: 'Paint-by-number guide with corresponding reference colours.',
+          image: project.colouring_image
+              ? `${BACKEND_URL}${project.colouring_image}`
+              : null,
+      },
   ];
 
   return (
@@ -260,7 +287,7 @@ const ViewProject = () => {
               </div>
 
               <div className="drawing-stages-grid">
-                {dummyStages.map((stage) => (
+                {drawingStages.map((stage) => (
                   <button
                     type="button"
                     key={stage.id}
@@ -271,29 +298,51 @@ const ViewProject = () => {
                     aria-label={`Open enlarged preview of ${stage.name}`}
                   >
                     <div className="drawing-stage-image-wrapper">
-                      <img
-                        src={stage.image}
-                        alt={stage.name}
-                        loading="lazy"
-                      />
 
-                      <div className="drawing-stage-hover-overlay">
-                        <svg
-                          width="38"
-                          height="38"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          aria-hidden="true"
-                        >
-                          <circle cx="11" cy="11" r="8" />
-                          <path d="M21 21l-4.35-4.35" />
-                          <path d="M11 8v6M8 11h6" />
-                        </svg>
+                        {stage.image ? (
 
-                        <span>View image</span>
-                      </div>
+                            <img
+                                src={stage.image}
+                                alt={stage.name}
+                                loading="lazy"
+                            />
+
+                        ) : (
+
+                            <div className="stage-image-placeholder">
+
+                                <div className="stage-placeholder-spinner"></div>
+
+                                <span>
+                                    Output not generated yet
+                                </span>
+
+                            </div>
+
+                        )}
+
+                        {stage.image && (
+                            <div className="drawing-stage-hover-overlay">
+
+                                <svg
+                                    width="38"
+                                    height="38"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.7"
+                                    aria-hidden="true"
+                                >
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="M21 21l-4.35-4.35" />
+                                    <path d="M11 8v6M8 11h6" />
+                                </svg>
+
+                                <span>View image</span>
+
+                            </div>
+                        )}
+
                     </div>
 
                     <div className="drawing-stage-caption">
