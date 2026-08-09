@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-
+import JSZip from 'jszip';
 import '../styles/ViewProject.css';
 import { getProject } from '../services/projectService';
 
@@ -354,6 +354,157 @@ const handleDownload = async () => {
   }
 };
 
+      const handleDownloadZip = async () => {
+      try {
+        console.log('Starting ZIP download...');
+
+        const stages = [
+          {
+            filename: '01_geometric_shape_extraction.png',
+            url: project.geometric_image
+              ? `${BACKEND_URL}${project.geometric_image}`
+              : null,
+          },
+          {
+            filename: '02_curve_extraction.png',
+            url: project.curve_image
+              ? `${BACKEND_URL}${project.curve_image}`
+              : null,
+          },
+          {
+            filename: '03_pencil_shading.png',
+            url: project.shading_image
+              ? `${BACKEND_URL}${project.shading_image}`
+              : null,
+          },
+          {
+            filename: '04_number_colour_guide.png',
+            url: project.colouring_image
+              ? `${BACKEND_URL}${project.colouring_image}`
+              : null,
+          },
+        ];
+
+        console.log('ZIP stages:', stages);
+
+        const missingStage = stages.find(
+          (stage) => !stage.url
+        );
+
+        if (missingStage) {
+          alert(
+            'All four drawing stages must be generated before downloading.'
+          );
+          return;
+        }
+
+        const zip = new JSZip();
+
+        // Download each generated image
+        for (const stage of stages) {
+          console.log(
+            'Fetching:',
+            stage.url
+          );
+
+          const response = await fetch(
+            stage.url
+          );
+
+          console.log(
+            stage.filename,
+            'status:',
+            response.status
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch ${stage.filename}. HTTP ${response.status}`
+            );
+          }
+
+          const imageBlob =
+            await response.blob();
+
+          console.log(
+            'Downloaded:',
+            stage.filename,
+            imageBlob.size,
+            'bytes'
+          );
+
+          zip.file(
+            stage.filename,
+            imageBlob
+          );
+        }
+
+        console.log(
+          'All 4 images added to ZIP.'
+        );
+
+        // Create ZIP
+        const zipBlob =
+          await zip.generateAsync({
+            type: 'blob',
+          });
+
+        // Safe project name
+        const safeProjectTitle = (
+          project.title ||
+          `project_${projectId}`
+        )
+          .replace(
+            /[^a-zA-Z0-9_-]/g,
+            '_'
+          );
+
+        // Create temporary browser URL
+        const downloadUrl =
+          URL.createObjectURL(
+            zipBlob
+          );
+
+        // Create temporary download link
+        const link =
+          document.createElement('a');
+
+        link.href =
+          downloadUrl;
+
+        link.download =
+          `${safeProjectTitle}_drawing_stages.zip`;
+
+        document.body.appendChild(
+          link
+        );
+
+        link.click();
+
+        document.body.removeChild(
+          link
+        );
+
+        URL.revokeObjectURL(
+          downloadUrl
+        );
+
+        console.log(
+          'ZIP downloaded successfully.'
+        );
+
+      } catch (error) {
+        console.error(
+          'ZIP DOWNLOAD ERROR:',
+          error
+        );
+
+        alert(
+          `Could not create ZIP file.\n\n${error.message}`
+        );
+      }
+    };
+
   const handleUploadAnother = () => {
     navigate('/upload');
   };
@@ -623,24 +774,10 @@ const handleDownload = async () => {
 
               <button
                 type="button"
-                className="btn-download-pdf"
-                onClick={handleDownload}
+                className="btn-outline"
+                onClick={handleDownloadZip}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-
-                Download PDF
+                Download as ZIP
               </button>
             </div>
           )}
