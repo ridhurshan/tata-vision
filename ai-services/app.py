@@ -1,5 +1,7 @@
+from pipeline.colouring import generate_colouring
 from pipeline.geometric import generate_geometric
-
+from pipeline.curves import generate_curves
+from pipeline.shading import generate_shading
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
@@ -225,8 +227,7 @@ def process_image():
 
 
         # ====================================================
-        # STAGE 1
-        # REAL GEOMETRIC EXTRACTION
+        # STAGE 1 - REAL GEOMETRIC EXTRACTION
         # ====================================================
 
         geometric_result = generate_geometric(
@@ -236,37 +237,69 @@ def process_image():
             model_type=SAM_MODEL_TYPE
         )
 
-
         print(
             "Real geometric extraction completed."
         )
 
 
         # ====================================================
-        # STAGES 2 - 4
-        # TEMPORARY FOR NOW
+        # STAGE 2 - REAL CURVE EXTRACTION
         # ====================================================
 
-        cv2.imwrite(
-            curves_path,
-            image
+        curve_temp_directory = os.path.join(
+            project_output_dir,
+            "temp"
         )
 
-        cv2.imwrite(
-            shading_path,
-            image
+        curve_result = generate_curves(
+            input_path=input_path,
+            output_path=curves_path,
+            temporary_directory=curve_temp_directory
         )
 
-        cv2.imwrite(
-            colouring_path,
-            image
+        print(
+            "Real curve extraction completed."
+        )
+
+
+        # ====================================================
+        # STAGE 3 - REAL PENCIL SHADING
+        # ====================================================
+
+        shading_temp_directory = os.path.join(
+            project_output_dir,
+            "temp"
+        )
+
+
+        shading_result = generate_shading(
+            input_path=input_path,
+            curve_path=curves_path,
+            output_path=shading_path,
+            temporary_directory=shading_temp_directory,
+            shading_scale=5
         )
 
 
         print(
-            "Stages 2-4 temporary outputs generated."
+            "Real pencil shading completed."
         )
 
+        # ====================================================
+        # STAGE 4 - REAL NUMBER + COLOUR GUIDE
+        # ====================================================
+
+        colouring_result = generate_colouring(
+            input_path=input_path,
+            output_path=colouring_path,
+            number_of_colours=8,
+            min_region_area=80
+        )
+
+
+        print(
+            "Real number and colour guide completed."
+        )
 
         # ====================================================
         # PUBLIC URL PATHS

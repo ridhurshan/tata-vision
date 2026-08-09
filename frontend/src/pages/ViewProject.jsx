@@ -7,9 +7,13 @@ import { getProject } from '../services/projectService';
 import Footer from '../common/Footer';
 import Navbar from '../common/Navbar';
 
+import { jsPDF } from 'jspdf';
+
 const ViewProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+
+    const BACKEND_URL = 'http://localhost:5000';
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -91,9 +95,264 @@ const ViewProject = () => {
     });
   };
 
-  const handleDownload = () => {
-    alert('Downloading as PDF...');
-  };
+  const loadImageForPDF = async (imageUrl) => {
+
+  const response = await fetch(imageUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      `Could not load image: ${imageUrl}`
+    );
+  }
+
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+};
+
+const handleDownload = async () => {
+
+  try {
+
+    const stages = [
+      {
+        title: '1. Geometric Shape Extraction',
+        image: project.geometric_image
+          ? `${BACKEND_URL}${project.geometric_image}`
+          : null
+      },
+      {
+        title: '2. Curve Extraction',
+        image: project.curve_image
+          ? `${BACKEND_URL}${project.curve_image}`
+          : null
+      },
+      {
+        title: '3. Pencil Shading',
+        image: project.shading_image
+          ? `${BACKEND_URL}${project.shading_image}`
+          : null
+      },
+      {
+        title: '4. Number & Colour Guide',
+        image: project.colouring_image
+          ? `${BACKEND_URL}${project.colouring_image}`
+          : null
+      }
+    ];
+
+
+    // Check all 4 images exist
+    const missingStage = stages.find(
+      (stage) => !stage.image
+    );
+
+    if (missingStage) {
+      alert(
+        'All four drawing stages must be generated before downloading.'
+      );
+      return;
+    }
+
+
+    // A4 portrait
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+
+    for (
+      let index = 0;
+      index < stages.length;
+      index++
+    ) {
+
+      const stage = stages[index];
+
+
+      // Add another page after first image
+      if (index > 0) {
+        pdf.addPage();
+      }
+
+
+      // ==========================================
+      // PROJECT TITLE
+      // ==========================================
+
+      pdf.setFontSize(16);
+
+      pdf.text(
+        project.title || 'Drawing Guide',
+        pageWidth / 2,
+        15,
+        {
+          align: 'center'
+        }
+      );
+
+
+      // ==========================================
+      // STAGE TITLE
+      // ==========================================
+
+      pdf.setFontSize(13);
+
+      pdf.text(
+        stage.title,
+        pageWidth / 2,
+        25,
+        {
+          align: 'center'
+        }
+      );
+
+
+      // ==========================================
+      // LOAD IMAGE
+      // ==========================================
+
+      const imageData =
+        await loadImageForPDF(
+          stage.image
+        );
+
+
+      // ==========================================
+      // GET IMAGE DIMENSIONS
+      // ==========================================
+
+      const imageProperties =
+        pdf.getImageProperties(
+          imageData
+        );
+
+
+      const maxWidth =
+        pageWidth - 20;
+
+      const maxHeight =
+        pageHeight - 50;
+
+
+      const widthRatio =
+        maxWidth /
+        imageProperties.width;
+
+      const heightRatio =
+        maxHeight /
+        imageProperties.height;
+
+
+      const ratio = Math.min(
+        widthRatio,
+        heightRatio
+      );
+
+
+      const imageWidth =
+        imageProperties.width *
+        ratio;
+
+      const imageHeight =
+        imageProperties.height *
+        ratio;
+
+
+      // Center image
+      const imageX =
+        (
+          pageWidth -
+          imageWidth
+        ) / 2;
+
+      const imageY = 35;
+
+
+      // ==========================================
+      // ADD IMAGE
+      // ==========================================
+
+      pdf.addImage(
+        imageData,
+        'PNG',
+        imageX,
+        imageY,
+        imageWidth,
+        imageHeight
+      );
+
+
+      // ==========================================
+      // PAGE NUMBER
+      // ==========================================
+
+      pdf.setFontSize(9);
+
+      pdf.text(
+        `Stage ${index + 1} of 4`,
+        pageWidth / 2,
+        pageHeight - 7,
+        {
+          align: 'center'
+        }
+      );
+    }
+
+
+    // ==========================================
+    // SAFE FILE NAME
+    // ==========================================
+
+    const safeProjectTitle = (
+      project.title ||
+      `project-${projectId}`
+    )
+      .replace(
+        /[^a-z0-9]/gi,
+        '_'
+      )
+      .toLowerCase();
+
+
+    // ==========================================
+    // DOWNLOAD PDF
+    // ==========================================
+
+    pdf.save(
+      `${safeProjectTitle}_drawing_guide.pdf`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'PDF generation error:',
+      error
+    );
+
+    alert(
+      'Could not generate PDF. Please try again.'
+    );
+  }
+};
 
   const handleUploadAnother = () => {
     navigate('/upload');
@@ -153,7 +412,7 @@ const ViewProject = () => {
   // Temporary images until real AI output is connected.
   // These URLs use larger images so they do not become too blurry
   // when shown inside the enlarged preview.
- const BACKEND_URL = 'http://localhost:5000';
+ //const BACKEND_URL = 'http://localhost:5000';
 
   const drawingStages = [
       {
