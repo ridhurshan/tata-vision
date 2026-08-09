@@ -40,6 +40,16 @@ app.use(
     )
 );
 
+app.use(
+  "/uploads/input",
+  express.static(
+    path.join(
+      __dirname,
+      "../uploads/input"
+    )
+  )
+);
+
 
 // ======================================================
 // ROUTES

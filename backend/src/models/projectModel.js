@@ -2,14 +2,27 @@ const db = require("../config/db");
 
 const Project = {
     async create(project) {
+
         const sql = `
-            INSERT INTO projects(user_id, title, description)
-            VALUES (?, ?, ?)
+            INSERT INTO projects(
+                user_id,
+                title,
+                description,
+                input_image
+            )
+            VALUES (?, ?, ?, ?)
         `;
+
         const [result] = await db.query(
             sql,
-            [project.user_id, project.title, project.description]
+            [
+                project.user_id,
+                project.title,
+                project.description,
+                project.input_image
+            ]
         );
+
         return result;
     },
 

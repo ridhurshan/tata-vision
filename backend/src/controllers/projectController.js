@@ -50,21 +50,15 @@ exports.createProject = async (req, res) => {
         // ==================================================
 
         const projectData = {
+        user_id: req.body.user_id,
+        title: req.body.title,
+        description: req.body.description,
 
-            user_id:
-                req.body.user_id,
+        input_image:
+            `/uploads/input/${req.file.filename}`,
 
-            title:
-                req.body.title,
-
-            description:
-                req.body.description,
-
-            input_image:
-                req.file.path,
-
-            input_filename:
-                req.file.filename
+        input_filename:
+            req.file.filename
         };
 
 
