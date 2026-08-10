@@ -11,6 +11,7 @@ import NotFound from "../pages/NotFound";
 import Landing from "../pages/Landing";
 import ViewProject from "../pages/ViewProject";
 import VerifyEmail from "../pages/VerifyEmail";
+import ForgotPassword from "../pages/ForgotPassword";
 
 export default function AppRoutes() {
   return (
@@ -27,7 +28,7 @@ export default function AppRoutes() {
       <Route path="/landing" element={<Landing />} />
       <Route path="/projects/:projectId" element={<ViewProject />} />
       <Route path="*" element={<NotFound />} />
-      
+      <Route path="/forgot-password"element={<ForgotPassword />}/>
     </Routes>
   );
 }
