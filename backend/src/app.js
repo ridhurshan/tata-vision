@@ -3,6 +3,7 @@ const cors = require("cors");
 const path = require("path");
 
 const authRoutes = require("./routes/authRoutes");
+const adminRoutes = require("./routes/adminRoutes");
 const projectRoutes = require("./routes/projectRoutes");
 
 const app = express();
@@ -13,32 +14,27 @@ const app = express();
 // ======================================================
 
 app.use(cors());
-
 app.use(express.json());
 
 
 // ======================================================
 // SERVE GENERATED AI IMAGES
 // ======================================================
-//
-// Example:
-//
-// backend/uploads/outputs/test/geometric.png
-//
-// becomes:
-//
-// http://localhost:5000/outputs/test/geometric.png
-//
 
 app.use(
-    "/outputs",
-    express.static(
-        path.join(
-            __dirname,
-            "../uploads/outputs"
-        )
+  "/outputs",
+  express.static(
+    path.join(
+      __dirname,
+      "../uploads/outputs"
     )
+  )
 );
+
+
+// ======================================================
+// SERVE ORIGINAL UPLOADED IMAGES
+// ======================================================
 
 app.use(
   "/uploads/input",
@@ -56,13 +52,18 @@ app.use(
 // ======================================================
 
 app.use(
-    "/api/auth",
-    authRoutes
+  "/api/auth",
+  authRoutes
 );
 
 app.use(
-    "/api/projects",
-    projectRoutes
+  "/api/admin",
+  adminRoutes
+);
+
+app.use(
+  "/api/projects",
+  projectRoutes
 );
 
 
