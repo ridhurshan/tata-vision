@@ -8,10 +8,12 @@ import { useAuth } from '../context/AuthContext';
 const Navbar = () => {
     const { user, logout } = useAuth();
     const isAuthenticated = !!user;
+    const isAdmin = user?.role === 'ADMIN';
     const [isMenuOpen, setIsMenuOpen] = useState(false);
     const [isScrolled, setIsScrolled] = useState(false);
     const navigate = useNavigate();
     const location = useLocation();
+
 
 
   // Handle scroll effect
@@ -44,7 +46,11 @@ const Navbar = () => {
     <nav className={`navbar ${isScrolled ? 'navbar-scrolled' : ''}`}>
       <div className="navbar-container">
         {/* Brand/Logo */}
-        <Link to="/" className="navbar-brand" onClick={closeMenu}>
+              <Link 
+                to="/Landing" 
+                className={`nav-link ${isActive('/Landing') ? 'active' : ''}`}
+                onClick={closeMenu}
+              >
           <img 
             src={logoImage} 
             alt="DrawAI Logo" 
@@ -83,25 +89,7 @@ const Navbar = () => {
                 Home
               </Link>
             </li>
-                        <li>
-              <Link 
-                to="/Upload" 
-                className={`nav-link ${isActive('/') ? 'active' : ''}`}
-                onClick={closeMenu}
-              >
-                Upload
-              </Link>
-            </li>
-                        <li>
-              <Link 
-                to="/Landing" 
-                className={`nav-link ${isActive('/Landing') ? 'active' : ''}`}
-                onClick={closeMenu}
-              >
-                Landing
-              </Link>
-            </li>
-                        <li>
+            <li>
               <Link 
                 to="/Projects" 
                 className={`nav-link ${isActive('/') ? 'active' : ''}`}
@@ -110,7 +98,7 @@ const Navbar = () => {
                 Projects
               </Link>
             </li>
-            <li>
+            {/* <li>
               <Link 
                 to="/projects/1" 
                 className={`nav-link ${isActive('/projects/1') ? 'active' : ''}`}
@@ -118,16 +106,18 @@ const Navbar = () => {
               >
                 ViewProject
               </Link>
-            </li>
-                        <li>
-              <Link 
-                to="/admin" 
-                className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
-                onClick={closeMenu}
-              >
-                Admin
-              </Link>
-            </li>
+            </li> */}
+            {isAdmin && (
+              <li>
+                <Link
+                  to="/admin"
+                  className={`nav-link ${isActive('/admin') ? 'active' : ''}`}
+                  onClick={closeMenu}
+                >
+                  Admin
+                </Link>
+              </li>
+            )}
             <li>
               <Link 
                 to="/profile" 
@@ -137,7 +127,7 @@ const Navbar = () => {
                 Profile
               </Link>
             </li>
-                                                <li>
+            {/* <li>
               <Link 
                 to="/notfound" 
                 className={`nav-link ${isActive('/notfound') ? 'active' : ''}`}
@@ -145,7 +135,7 @@ const Navbar = () => {
               >
                 NotFound
               </Link>
-            </li>
+            </li> */}
             
             {isAuthenticated ? (
               <>

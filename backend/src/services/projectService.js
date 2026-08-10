@@ -30,3 +30,24 @@ exports.deleteProject = async (id) => {
     await Project.delete(id);
     return { message: "Project deleted successfully" };
 };
+
+exports.updateAIOutputs = async (projectId, outputs) => {
+  return await Project.updateAIOutputs(
+    projectId,
+    outputs
+  );
+};
+
+exports.updateAIOutputs = async (projectId, outputs) => {
+  return await Project.updateAIOutputs(
+    projectId,
+    outputs
+  );
+};
+
+exports.updateStatus = async (projectId, status) => {
+  return await Project.updateStatus(
+    projectId,
+    status
+  );
+};

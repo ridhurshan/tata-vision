@@ -2,14 +2,27 @@ const db = require("../config/db");
 
 const Project = {
     async create(project) {
+
         const sql = `
-            INSERT INTO projects(user_id, title, description)
-            VALUES (?, ?, ?)
+            INSERT INTO projects(
+                user_id,
+                title,
+                description,
+                input_image
+            )
+            VALUES (?, ?, ?, ?)
         `;
+
         const [result] = await db.query(
             sql,
-            [project.user_id, project.title, project.description]
+            [
+                project.user_id,
+                project.title,
+                project.description,
+                project.input_image
+            ]
         );
+
         return result;
     },
 
@@ -47,7 +60,47 @@ const Project = {
     async delete(id) {
         const [result] = await db.query("DELETE FROM projects WHERE id=?", [id]);
         return result;
-    }
+    },
+
+    async updateAIOutputs(id, outputs) {
+        const sql = `
+            UPDATE projects
+            SET
+                geometric_image = ?,
+                curve_image = ?,
+                shading_image = ?,
+                colouring_image = ?,
+                status = 'Completed'
+            WHERE id = ?
+        `;
+
+        const [result] = await db.query(
+            sql,
+            [
+                outputs.geometric_image,
+                outputs.curve_image,
+                outputs.shading_image,
+                outputs.colouring_image,
+                id
+            ]
+        );
+
+        return result;
+    },
+
+
+    async updateStatus(id, status) {
+        const [result] = await db.query(
+            `
+            UPDATE projects
+            SET status = ?
+            WHERE id = ?
+            `,
+            [status, id]
+        );
+
+        return result;
+    },
 };
 
 module.exports = Project;

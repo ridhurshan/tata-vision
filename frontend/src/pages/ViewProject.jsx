@@ -1,15 +1,19 @@
 import React, { useEffect, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router-dom';
-
+import JSZip from 'jszip';
 import '../styles/ViewProject.css';
 import { getProject } from '../services/projectService';
 
 import Footer from '../common/Footer';
 import Navbar from '../common/Navbar';
 
+import { jsPDF } from 'jspdf';
+
 const ViewProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
+
+    const BACKEND_URL = 'http://localhost:5000';
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -27,13 +31,30 @@ const ViewProject = () => {
       setError('');
 
       try {
-        const response = await getProject(projectId);
-        setProject(response.data);
+
+          const response = await getProject(projectId);
+
+          console.log(
+              "PROJECT RECEIVED FROM BACKEND:",
+              response.data
+          );
+
+          setProject(response.data);
+
       } catch (err) {
-        console.error('Error fetching project:', err);
-        setError('Project not found.');
+
+          console.error(
+              'Error fetching project:',
+              err
+          );
+
+          setError(
+              'Project not found.'
+          );
+
       } finally {
-        setLoading(false);
+
+          setLoading(false);
       }
     };
 
@@ -74,22 +95,433 @@ const ViewProject = () => {
     });
   };
 
-  const handleDownload = () => {
-    alert('Downloading as PDF...');
-  };
+  const loadImageForPDF = async (imageUrl) => {
+
+  const response = await fetch(imageUrl);
+
+  if (!response.ok) {
+    throw new Error(
+      `Could not load image: ${imageUrl}`
+    );
+  }
+
+  const blob = await response.blob();
+
+  return new Promise((resolve, reject) => {
+
+    const reader = new FileReader();
+
+    reader.onloadend = () => {
+      resolve(reader.result);
+    };
+
+    reader.onerror = reject;
+
+    reader.readAsDataURL(blob);
+  });
+};
+
+const handleDownload = async () => {
+
+  try {
+
+    const stages = [
+      {
+        title: '1. Geometric Shape Extraction',
+        image: project.geometric_image
+          ? `${BACKEND_URL}${project.geometric_image}`
+          : null
+      },
+      {
+        title: '2. Curve Extraction',
+        image: project.curve_image
+          ? `${BACKEND_URL}${project.curve_image}`
+          : null
+      },
+      {
+        title: '3. Pencil Shading',
+        image: project.shading_image
+          ? `${BACKEND_URL}${project.shading_image}`
+          : null
+      },
+      {
+        title: '4. Number & Colour Guide',
+        image: project.colouring_image
+          ? `${BACKEND_URL}${project.colouring_image}`
+          : null
+      }
+    ];
+
+
+    // Check all 4 images exist
+    const missingStage = stages.find(
+      (stage) => !stage.image
+    );
+
+    if (missingStage) {
+      alert(
+        'All four drawing stages must be generated before downloading.'
+      );
+      return;
+    }
+
+
+    // A4 portrait
+    const pdf = new jsPDF({
+      orientation: 'portrait',
+      unit: 'mm',
+      format: 'a4'
+    });
+
+
+    const pageWidth = pdf.internal.pageSize.getWidth();
+    const pageHeight = pdf.internal.pageSize.getHeight();
+
+
+    for (
+      let index = 0;
+      index < stages.length;
+      index++
+    ) {
+
+      const stage = stages[index];
+
+
+      // Add another page after first image
+      if (index > 0) {
+        pdf.addPage();
+      }
+
+
+      // ==========================================
+      // PROJECT TITLE
+      // ==========================================
+
+      pdf.setFontSize(16);
+
+      pdf.text(
+        project.title || 'Drawing Guide',
+        pageWidth / 2,
+        15,
+        {
+          align: 'center'
+        }
+      );
+
+
+      // ==========================================
+      // STAGE TITLE
+      // ==========================================
+
+      pdf.setFontSize(13);
+
+      pdf.text(
+        stage.title,
+        pageWidth / 2,
+        25,
+        {
+          align: 'center'
+        }
+      );
+
+
+      // ==========================================
+      // LOAD IMAGE
+      // ==========================================
+
+      const imageData =
+        await loadImageForPDF(
+          stage.image
+        );
+
+
+      // ==========================================
+      // GET IMAGE DIMENSIONS
+      // ==========================================
+
+      const imageProperties =
+        pdf.getImageProperties(
+          imageData
+        );
+
+
+      const maxWidth =
+        pageWidth - 20;
+
+      const maxHeight =
+        pageHeight - 50;
+
+
+      const widthRatio =
+        maxWidth /
+        imageProperties.width;
+
+      const heightRatio =
+        maxHeight /
+        imageProperties.height;
+
+
+      const ratio = Math.min(
+        widthRatio,
+        heightRatio
+      );
+
+
+      const imageWidth =
+        imageProperties.width *
+        ratio;
+
+      const imageHeight =
+        imageProperties.height *
+        ratio;
+
+
+      // Center image
+      const imageX =
+        (
+          pageWidth -
+          imageWidth
+        ) / 2;
+
+      const imageY = 35;
+
+
+      // ==========================================
+      // ADD IMAGE
+      // ==========================================
+
+      pdf.addImage(
+        imageData,
+        'PNG',
+        imageX,
+        imageY,
+        imageWidth,
+        imageHeight
+      );
+
+
+      // ==========================================
+      // PAGE NUMBER
+      // ==========================================
+
+      pdf.setFontSize(9);
+
+      pdf.text(
+        `Stage ${index + 1} of 4`,
+        pageWidth / 2,
+        pageHeight - 7,
+        {
+          align: 'center'
+        }
+      );
+    }
+
+
+    // ==========================================
+    // SAFE FILE NAME
+    // ==========================================
+
+    const safeProjectTitle = (
+      project.title ||
+      `project-${projectId}`
+    )
+      .replace(
+        /[^a-z0-9]/gi,
+        '_'
+      )
+      .toLowerCase();
+
+
+    // ==========================================
+    // DOWNLOAD PDF
+    // ==========================================
+
+    pdf.save(
+      `${safeProjectTitle}_drawing_guide.pdf`
+    );
+
+
+  } catch (error) {
+
+    console.error(
+      'PDF generation error:',
+      error
+    );
+
+    alert(
+      'Could not generate PDF. Please try again.'
+    );
+  }
+};
+
+      const handleDownloadZip = async () => {
+      try {
+        console.log('Starting ZIP download...');
+
+        const stages = [
+          {
+            filename: '01_geometric_shape_extraction.png',
+            url: project.geometric_image
+              ? `${BACKEND_URL}${project.geometric_image}`
+              : null,
+          },
+          {
+            filename: '02_curve_extraction.png',
+            url: project.curve_image
+              ? `${BACKEND_URL}${project.curve_image}`
+              : null,
+          },
+          {
+            filename: '03_pencil_shading.png',
+            url: project.shading_image
+              ? `${BACKEND_URL}${project.shading_image}`
+              : null,
+          },
+          {
+            filename: '04_number_colour_guide.png',
+            url: project.colouring_image
+              ? `${BACKEND_URL}${project.colouring_image}`
+              : null,
+          },
+        ];
+
+        console.log('ZIP stages:', stages);
+
+        const missingStage = stages.find(
+          (stage) => !stage.url
+        );
+
+        if (missingStage) {
+          alert(
+            'All four drawing stages must be generated before downloading.'
+          );
+          return;
+        }
+
+        const zip = new JSZip();
+
+        // Download each generated image
+        for (const stage of stages) {
+          console.log(
+            'Fetching:',
+            stage.url
+          );
+
+          const response = await fetch(
+            stage.url
+          );
+
+          console.log(
+            stage.filename,
+            'status:',
+            response.status
+          );
+
+          if (!response.ok) {
+            throw new Error(
+              `Failed to fetch ${stage.filename}. HTTP ${response.status}`
+            );
+          }
+
+          const imageBlob =
+            await response.blob();
+
+          console.log(
+            'Downloaded:',
+            stage.filename,
+            imageBlob.size,
+            'bytes'
+          );
+
+          zip.file(
+            stage.filename,
+            imageBlob
+          );
+        }
+
+        console.log(
+          'All 4 images added to ZIP.'
+        );
+
+        // Create ZIP
+        const zipBlob =
+          await zip.generateAsync({
+            type: 'blob',
+          });
+
+        // Safe project name
+        const safeProjectTitle = (
+          project.title ||
+          `project_${projectId}`
+        )
+          .replace(
+            /[^a-zA-Z0-9_-]/g,
+            '_'
+          );
+
+        // Create temporary browser URL
+        const downloadUrl =
+          URL.createObjectURL(
+            zipBlob
+          );
+
+        // Create temporary download link
+        const link =
+          document.createElement('a');
+
+        link.href =
+          downloadUrl;
+
+        link.download =
+          `${safeProjectTitle}_drawing_stages.zip`;
+
+        document.body.appendChild(
+          link
+        );
+
+        link.click();
+
+        document.body.removeChild(
+          link
+        );
+
+        URL.revokeObjectURL(
+          downloadUrl
+        );
+
+        console.log(
+          'ZIP downloaded successfully.'
+        );
+
+      } catch (error) {
+        console.error(
+          'ZIP DOWNLOAD ERROR:',
+          error
+        );
+
+        alert(
+          `Could not create ZIP file.\n\n${error.message}`
+        );
+      }
+    };
 
   const handleUploadAnother = () => {
     navigate('/upload');
   };
 
-  const handleStageClick = (stage) => {
-    setActiveStage(stage.id);
-    setSelectedStage(stage);
-  };
-
   const closeLightbox = () => {
     setSelectedStage(null);
   };
+
+  const handleStageClick = (stage) => {
+
+    if (!stage.image) {
+        return;
+    }
+
+    setActiveStage(stage.id);
+    setSelectedStage(stage);
+};
 
   if (loading) {
     return (
@@ -121,49 +553,54 @@ const ViewProject = () => {
           ? 0
           : 10;
 
-  const processingStages = [
-    {
-      id: 1,
-      name: 'Sketch Analysis',
-    },
-    {
-      id: 2,
-      name: 'Enhancement',
-    },
-    {
-      id: 3,
-      name: 'Refinement',
-    },
-    {
-      id: 4,
-      name: 'Finalization',
-    },
-  ];
+      const processingStages = [
+          { id: 1, name: 'Geometric Shapes' },
+          { id: 2, name: 'Curves' },
+          { id: 3, name: 'Shading' },
+          { id: 4, name: 'Colouring Guide' },
+      ];
 
   // Temporary images until real AI output is connected.
   // These URLs use larger images so they do not become too blurry
   // when shown inside the enlarged preview.
-  const dummyStages = [
-    {
-      id: 1,
-      name: 'Stage 1: Geometric Foundation',
-      image: `https://picsum.photos/seed/${project.id}-1/1200/900`,
-    },
-    {
-      id: 2,
-      name: 'Stage 2: Contour Line-work',
-      image: `https://picsum.photos/seed/${project.id}-2/1200/900`,
-    },
-    {
-      id: 3,
-      name: 'Stage 3: Shaded Study (Monochrome)',
-      image: `https://picsum.photos/seed/${project.id}-3/1200/900`,
-    },
-    {
-      id: 4,
-      name: 'Stage 4: Color Painting (Final)',
-      image: `https://picsum.photos/seed/${project.id}-4/1200/900`,
-    },
+ //const BACKEND_URL = 'http://localhost:5000';
+
+  const drawingStages = [
+      {
+          id: 1,
+          name: 'Geometric Shape Extraction',
+          description: 'Basic geometric structure extracted from the reference image.',
+          image: project.geometric_image
+              ? `${BACKEND_URL}${project.geometric_image}`
+              : null,
+      },
+
+      {
+          id: 2,
+          name: 'Curve Extraction',
+          description: 'Refined curves and contour lines extracted from the image.',
+          image: project.curve_image
+              ? `${BACKEND_URL}${project.curve_image}`
+              : null,
+      },
+
+      {
+          id: 3,
+          name: 'Pencil Shading',
+          description: 'Pencil shading generated using reference-image light and shadow.',
+          image: project.shading_image
+              ? `${BACKEND_URL}${project.shading_image}`
+              : null,
+      },
+
+      {
+          id: 4,
+          name: 'Number & Colour Guide',
+          description: 'Paint-by-number guide with corresponding reference colours.',
+          image: project.colouring_image
+              ? `${BACKEND_URL}${project.colouring_image}`
+              : null,
+      },
   ];
 
   return (
@@ -260,7 +697,7 @@ const ViewProject = () => {
               </div>
 
               <div className="drawing-stages-grid">
-                {dummyStages.map((stage) => (
+                {drawingStages.map((stage) => (
                   <button
                     type="button"
                     key={stage.id}
@@ -271,29 +708,51 @@ const ViewProject = () => {
                     aria-label={`Open enlarged preview of ${stage.name}`}
                   >
                     <div className="drawing-stage-image-wrapper">
-                      <img
-                        src={stage.image}
-                        alt={stage.name}
-                        loading="lazy"
-                      />
 
-                      <div className="drawing-stage-hover-overlay">
-                        <svg
-                          width="38"
-                          height="38"
-                          viewBox="0 0 24 24"
-                          fill="none"
-                          stroke="currentColor"
-                          strokeWidth="1.7"
-                          aria-hidden="true"
-                        >
-                          <circle cx="11" cy="11" r="8" />
-                          <path d="M21 21l-4.35-4.35" />
-                          <path d="M11 8v6M8 11h6" />
-                        </svg>
+                        {stage.image ? (
 
-                        <span>View image</span>
-                      </div>
+                            <img
+                                src={stage.image}
+                                alt={stage.name}
+                                loading="lazy"
+                            />
+
+                        ) : (
+
+                            <div className="stage-image-placeholder">
+
+                                <div className="stage-placeholder-spinner"></div>
+
+                                <span>
+                                    Output not generated yet
+                                </span>
+
+                            </div>
+
+                        )}
+
+                        {stage.image && (
+                            <div className="drawing-stage-hover-overlay">
+
+                                <svg
+                                    width="38"
+                                    height="38"
+                                    viewBox="0 0 24 24"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    strokeWidth="1.7"
+                                    aria-hidden="true"
+                                >
+                                    <circle cx="11" cy="11" r="8" />
+                                    <path d="M21 21l-4.35-4.35" />
+                                    <path d="M11 8v6M8 11h6" />
+                                </svg>
+
+                                <span>View image</span>
+
+                            </div>
+                        )}
+
                     </div>
 
                     <div className="drawing-stage-caption">
@@ -315,24 +774,10 @@ const ViewProject = () => {
 
               <button
                 type="button"
-                className="btn-download-pdf"
-                onClick={handleDownload}
+                className="btn-outline"
+                onClick={handleDownloadZip}
               >
-                <svg
-                  width="16"
-                  height="16"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  aria-hidden="true"
-                >
-                  <path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4" />
-                  <polyline points="7 10 12 15 17 10" />
-                  <line x1="12" y1="15" x2="12" y2="3" />
-                </svg>
-
-                Download PDF
+                Download as ZIP
               </button>
             </div>
           )}

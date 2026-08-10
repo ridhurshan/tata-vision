@@ -8,6 +8,7 @@ import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
 
 const Projects = () => {
+  const BACKEND_URL = 'http://localhost:5000';
   const { user } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -179,10 +180,16 @@ const handleDeleteProject = async (projectId) => {
             {filteredProjects.map((project) => (
               <div key={project.id} className="project-card">
                 <div className="project-thumbnail">
-                  <img
-                    src={`https://via.placeholder.com/200x150/6366f1/ffffff?text=${encodeURIComponent(project.title)}`}
-                    alt={project.title}
-                  />
+                  {project.input_image ? (
+                    <img
+                      src={`${BACKEND_URL}${project.input_image}`}
+                      alt={project.title}
+                    />
+                  ) : (
+                    <div className="project-thumbnail-placeholder">
+                      No image
+                    </div>
+                  )}
                   <span className={`status-badge ${getStatusBadge(project.status).className}`}>
                     {getStatusBadge(project.status).label}
                   </span>
