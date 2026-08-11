@@ -205,13 +205,26 @@ def generate_colouring(
     )
 
 
-    numbered_colour_guide[
-        boundary > 0
-    ] = (
-        40,
-        40,
-        40
+    # --------------------------------------------------------
+    # COLOURED OUTLINE (instead of flat black/grey)
+    # Each boundary pixel takes the colour of the region
+    # it belongs to, so the outline itself tells the user
+    # which colour to use — the interior stays white/empty.
+    # --------------------------------------------------------
+
+    colour_lut = sorted_centers.astype(
+        np.uint8
     )
+
+    boundary_mask = boundary > 0
+
+    numbered_colour_guide[
+        boundary_mask
+    ] = colour_lut[
+        label_map_smooth[
+            boundary_mask
+        ]
+    ]
 
 
     # ========================================================

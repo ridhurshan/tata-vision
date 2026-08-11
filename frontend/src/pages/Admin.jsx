@@ -6,6 +6,7 @@ import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
 import { getStats, getUsers, updateUserStatus } from '../services/adminService';
 import { getProjects } from '../services/projectService';
+import { useAuth } from '../context/AuthContext';
 
 const Admin = () => {
   const [activeTab, setActiveTab] = useState('overview');
@@ -21,7 +22,7 @@ const Admin = () => {
     activeUsers: 0,
   });
   const navigate = useNavigate();
-
+  const { user } = useAuth();
   const loadAdminData = async () => {
     setLoading(true);
     setError('');
@@ -47,9 +48,26 @@ const Admin = () => {
     }
   };
 
-  useEffect(() => {
+useEffect(() => {
+  if (
+    user &&
+    user.role?.toLowerCase() === 'admin'
+  ) {
     loadAdminData();
-  }, []);
+  }
+}, [user]);
+  useEffect(() => {
+  if (!user) {
+    navigate('/login');
+    return;
+  }
+
+  if (
+    user.role?.toLowerCase() !== 'admin'
+  ) {
+    navigate('/Dashboard');
+  }
+}, [user, navigate]);
 
   const handleLogout = () => {
     localStorage.removeItem('token');

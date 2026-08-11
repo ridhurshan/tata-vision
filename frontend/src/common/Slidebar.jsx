@@ -105,7 +105,8 @@ const Sidebar = () => {
   ];
 
   // Filter menu items based on user role (example)
-  const userRole = localStorage.getItem('userRole') || 'user';
+  const storedUser = JSON.parse(localStorage.getItem('user') || 'null');
+  const userRole = storedUser?.role?.toLowerCase() || 'user';
   const filteredMenuItems = menuItems.filter(item => 
     !item.adminOnly || userRole === 'admin'
   );
