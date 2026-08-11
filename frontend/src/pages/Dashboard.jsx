@@ -1,292 +1,796 @@
-// src/pages/Upload/index.jsx
-import React, { useState, useRef } from 'react';
+// src/pages/Dashboard/index.jsx
+
+import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Dashboard.css';
-import '../common/Navbar';
+
 import Navbar from '../common/Navbar';
+import Footer from '../common/Footer';
+import { useAuth } from '../context/AuthContext';
 
 const Dashboard = () => {
-  const [file, setFile] = useState(null);
-  const [preview, setPreview] = useState(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [isUploading, setIsUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const [error, setError] = useState('');
-  const [success, setSuccess] = useState('');
-  const fileInputRef = useRef(null);
   const navigate = useNavigate();
+  const { user } = useAuth();
 
-  const handleLogout = () => {
-    localStorage.removeItem('token');
-    navigate('/login');
+  const userName =
+    user?.name ||
+    user?.full_name ||
+    'Artist';
+
+  // Temporary values.
+  // Later we can connect these to your real projects API.
+  const stats = {
+    totalProjects: 0,
+    inProgress: 0,
+    completed: 0
   };
 
-  const handleDragEnter = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(true);
+  // Temporary recent projects.
+  // Later we will replace this with projects from your database.
+  const recentProjects = [];
+
+  const handleStartDrawing = () => {
+    navigate('/upload');
   };
 
-  const handleDragLeave = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-  };
-
-  const handleDragOver = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-  };
-
-  const handleDrop = (e) => {
-    e.preventDefault();
-    e.stopPropagation();
-    setIsDragging(false);
-    
-    const droppedFile = e.dataTransfer.files[0];
-    if (droppedFile) {
-      validateAndSetFile(droppedFile);
-    }
-  };
-
-  const handleFileSelect = (e) => {
-    const selectedFile = e.target.files[0];
-    if (selectedFile) {
-      validateAndSetFile(selectedFile);
-    }
-  };
-
-  const validateAndSetFile = (file) => {
-    setError('');
-    setSuccess('');
-
-    // Validate file type
-    const validTypes = ['image/jpeg', 'image/png', 'image/webp'];
-    if (!validTypes.includes(file.type)) {
-      setError('Please upload a JPG, PNG, or WebP image.');
-      return;
-    }
-
-    // Validate file size (5MB)
-    if (file.size > 5 * 1024 * 1024) {
-      setError('File size exceeds 5MB limit.');
-      return;
-    }
-
-    // Validate dimensions (optional - you can check with image loading)
-    const img = new Image();
-    img.onload = () => {
-      if (img.width < 100 || img.height < 100) {
-        setError('Image dimensions must be at least 100x100px.');
-        return;
-      }
-      setFile(file);
-      setPreview(URL.createObjectURL(file));
-      setSuccess('Image uploaded successfully!');
-    };
-    img.onerror = () => {
-      setError('Invalid image file.');
-    };
-    img.src = URL.createObjectURL(file);
-  };
-
-  const handleUpload = async () => {
-    if (!file) {
-      setError('Please select an image first.');
-      return;
-    }
-
-    setIsUploading(true);
-    setUploadProgress(0);
-
-    // Simulate upload progress
-    const interval = setInterval(() => {
-      setUploadProgress((prev) => {
-        if (prev >= 100) {
-          clearInterval(interval);
-          setIsUploading(false);
-          setSuccess('Image uploaded successfully! AI is processing your artwork...');
-          return 100;
-        }
-        return prev + 10;
-      });
-    }, 300);
-
-    // Simulate API call
-    try {
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      // const formData = new FormData();
-      // formData.append('image', file);
-      // const response = await api.post('/upload', formData);
-      console.log('Uploading file:', file);
-    } catch (err) {
-      setError('Upload failed. Please try again.');
-      setIsUploading(false);
-    }
-  };
-
-  const handleRemoveFile = () => {
-    setFile(null);
-    setPreview(null);
-    setError('');
-    setSuccess('');
-    setUploadProgress(0);
-    if (fileInputRef.current) {
-      fileInputRef.current.value = '';
-    }
-  };
-
-  const formatFileSize = (bytes) => {
-    if (bytes === 0) return '0 Bytes';
-    const k = 1024;
-    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  const handleViewProjects = () => {
+    navigate('/projects');
   };
 
   return (
-    <div className="upload-page">
-        <Navbar/>
-      <div className="upload-container">
-        {/* Header */}
-        <div className="upload-header">
-          <div className="header-left">
-            <h1>Upload Your Sketch</h1>
-            <p className="subtitle">
-              Share your drawing and let AI transform it into amazing artwork
-            </p>
-          </div>
-          <button onClick={handleLogout} className="logout-btn">
-            Logout
-          </button>
-        </div>
+    <>
+      <Navbar />
 
-        <div className="upload-content">
-          {/* Upload Area */}
-          <div className="upload-area-wrapper">
-            <div
-              className={`upload-area ${isDragging ? 'dragging' : ''} ${preview ? 'has-image' : ''}`}
-              onDragEnter={handleDragEnter}
-              onDragLeave={handleDragLeave}
-              onDragOver={handleDragOver}
-              onDrop={handleDrop}
-              onClick={() => fileInputRef.current?.click()}
-            >
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleFileSelect}
-                accept=".jpg,.jpeg,.png,.webp"
-                style={{ display: 'none' }}
-              />
+      <main className="dashboard-page">
 
-              {!preview ? (
-                <div className="upload-placeholder">
-                  <div className="upload-icon">
-                    <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                      <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
-                      <polyline points="17 8 12 3 7 8" />
-                      <line x1="12" y1="3" x2="12" y2="15" />
-                    </svg>
-                  </div>
-                  <h3>Drag & drop your image</h3>
-                  <p>or click to browse from your device</p>
-                  <span className="file-formats">Supported Formats: JPG, PNG, WebP (Max. 5MB)</span>
-                </div>
-              ) : (
-                <div className="preview-container">
-                  <img src={preview} alt="Preview" className="image-preview" />
-                  <div className="preview-overlay">
-                    <button 
-                      className="remove-btn"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        handleRemoveFile();
-                      }}
-                    >
-                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                        <line x1="18" y1="6" x2="6" y2="18" />
-                        <line x1="6" y1="6" x2="18" y2="18" />
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              )}
+        {/* ============================== */}
+        {/* HERO SECTION */}
+        {/* ============================== */}
+
+        <section className="dashboard-hero">
+          <div className="dashboard-container hero-container">
+
+            <div className="hero-content">
+
+              <span className="hero-badge">
+                AI-Powered Drawing Assistant
+              </span>
+
+              <h1>
+                Welcome back,
+                <span> {userName}</span>
+              </h1>
+
+              <p>
+                Turn your reference images into simple,
+                step-by-step drawing guidance with DrawAI.
+                Learn shapes, curves, shading and colouring
+                while creating your artwork.
+              </p>
+
+              <div className="hero-buttons">
+
+                <button
+                  className="dashboard-primary-btn"
+                  onClick={handleStartDrawing}
+                >
+                  <svg
+                    width="20"
+                    height="20"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+
+                  Start New Drawing
+                </button>
+
+                <button
+                  className="dashboard-secondary-btn"
+                  onClick={handleViewProjects}
+                >
+                  View My Projects
+
+                  <svg
+                    width="18"
+                    height="18"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M5 12h14" />
+                    <path d="M13 6l6 6-6 6" />
+                  </svg>
+                </button>
+
+              </div>
             </div>
 
-            {/* File Info */}
-            {file && (
-              <div className="file-info">
-                <div className="file-details">
-                  <span className="file-name">{file.name}</span>
-                  <span className="file-size">{formatFileSize(file.size)}</span>
-                </div>
-                <div className="file-actions">
-                  <button 
-                    className="remove-file-btn"
-                    onClick={handleRemoveFile}
-                  >
-                    Remove
-                  </button>
-                  <button 
-                    className="upload-btn"
-                    onClick={handleUpload}
-                    disabled={isUploading}
-                  >
-                    {isUploading ? 'Uploading...' : 'Upload to AI'}
-                  </button>
-                </div>
-              </div>
-            )}
 
-            {/* Progress Bar */}
-            {isUploading && (
-              <div className="progress-container">
-                <div className="progress-bar">
-                  <div 
-                    className="progress-fill"
-                    style={{ width: `${uploadProgress}%` }}
-                  />
-                </div>
-                <span className="progress-text">{uploadProgress}%</span>
-              </div>
-            )}
+            {/* Hero visual */}
 
-            {/* Messages */}
-            {error && <div className="error-message">{error}</div>}
-            {success && <div className="success-message">{success}</div>}
+            <div className="hero-visual">
+
+              <div className="drawing-demo-card">
+
+                <div className="demo-header">
+                  <span className="demo-dot"></span>
+                  <span className="demo-dot"></span>
+                  <span className="demo-dot"></span>
+
+                  <span className="demo-title">
+                    Drawing Process
+                  </span>
+                </div>
+
+                <div className="demo-content">
+
+                  <div className="demo-stage active">
+                    <span className="demo-number">1</span>
+
+                    <div>
+                      <strong>Upload</strong>
+                      <small>Reference image</small>
+                    </div>
+
+                    <span className="demo-check">✓</span>
+                  </div>
+
+                  <div className="demo-line"></div>
+
+                  <div className="demo-stage active">
+                    <span className="demo-number">2</span>
+
+                    <div>
+                      <strong>Basic Shapes</strong>
+                      <small>Structure guidance</small>
+                    </div>
+
+                    <span className="demo-check">✓</span>
+                  </div>
+
+                  <div className="demo-line"></div>
+
+                  <div className="demo-stage current">
+                    <span className="demo-number">3</span>
+
+                    <div>
+                      <strong>Shading</strong>
+                      <small>Light & shadow</small>
+                    </div>
+
+                    <span className="demo-processing"></span>
+                  </div>
+
+                  <div className="demo-line muted"></div>
+
+                  <div className="demo-stage">
+                    <span className="demo-number">4</span>
+
+                    <div>
+                      <strong>Colouring</strong>
+                      <small>Final colours</small>
+                    </div>
+                  </div>
+
+                </div>
+
+              </div>
+
+            </div>
+
+          </div>
+        </section>
+
+
+        {/* ============================== */}
+        {/* STATISTICS */}
+        {/* ============================== */}
+
+        <section className="dashboard-section">
+
+          <div className="dashboard-container">
+
+            <div className="section-heading">
+              <div>
+                <span className="section-label">
+                  YOUR WORKSPACE
+                </span>
+
+                <h2>
+                  Your Overview
+                </h2>
+
+                <p>
+                  A quick look at your drawing projects.
+                </p>
+              </div>
+            </div>
+
+
+            <div className="dashboard-stats">
+
+              {/* Total Projects */}
+
+              <div className="stat-card">
+
+                <div className="stat-icon stat-purple">
+
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <rect
+                      x="3"
+                      y="3"
+                      width="18"
+                      height="18"
+                      rx="2"
+                    />
+
+                    <path d="M3 9h18" />
+                    <path d="M9 21V9" />
+                  </svg>
+
+                </div>
+
+                <div className="stat-info">
+
+                  <span className="stat-value">
+                    {stats.totalProjects}
+                  </span>
+
+                  <span className="stat-title">
+                    Total Projects
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              {/* In Progress */}
+
+              <div className="stat-card">
+
+                <div className="stat-icon stat-orange">
+
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M12 7v5l3 2" />
+                  </svg>
+
+                </div>
+
+                <div className="stat-info">
+
+                  <span className="stat-value">
+                    {stats.inProgress}
+                  </span>
+
+                  <span className="stat-title">
+                    In Progress
+                  </span>
+
+                </div>
+
+              </div>
+
+
+              {/* Completed */}
+
+              <div className="stat-card">
+
+                <div className="stat-icon stat-green">
+
+                  <svg
+                    width="24"
+                    height="24"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <path d="M8 12l3 3 5-6" />
+                  </svg>
+
+                </div>
+
+                <div className="stat-info">
+
+                  <span className="stat-value">
+                    {stats.completed}
+                  </span>
+
+                  <span className="stat-title">
+                    Completed
+                  </span>
+
+                </div>
+
+              </div>
+
+            </div>
+
           </div>
 
-          {/* Requirements Panel */}
-          <div className="requirements-panel">
-            <h3>Requirements</h3>
-            <ul>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v8M8 12h8" />
+        </section>
+
+
+        {/* ============================== */}
+        {/* RECENT PROJECTS */}
+        {/* ============================== */}
+
+        <section className="dashboard-section recent-section">
+
+          <div className="dashboard-container">
+
+            <div className="section-heading recent-heading">
+
+              <div>
+
+                <span className="section-label">
+                  RECENT ACTIVITY
+                </span>
+
+                <h2>
+                  Continue Your Work
+                </h2>
+
+                <p>
+                  Continue from where you stopped.
+                </p>
+
+              </div>
+
+
+              <button
+                className="view-all-btn"
+                onClick={handleViewProjects}
+              >
+                View All
+
+                <svg
+                  width="17"
+                  height="17"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M13 6l6 6-6 6" />
                 </svg>
-                JPG, PNG, or WebP format
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v8M8 12h8" />
-                </svg>
-                Maximum file size: 5MB
-              </li>
-              <li>
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                  <circle cx="12" cy="12" r="10" />
-                  <path d="M12 8v8M8 12h8" />
-                </svg>
-                Minimum dimensions: 100x100px
-              </li>
-            </ul>
+
+              </button>
+
+            </div>
+
+
+            {recentProjects.length > 0 ? (
+
+              <div className="recent-project-grid">
+
+                {recentProjects.map((project) => (
+
+                  <div
+                    className="recent-project-card"
+                    key={project.id}
+                  >
+
+                    <img
+                      src={project.image}
+                      alt={project.title}
+                    />
+
+                    <div className="recent-project-info">
+
+                      <h3>
+                        {project.title}
+                      </h3>
+
+                      <p>
+                        {project.stage}
+                      </p>
+
+                      <button
+                        onClick={() =>
+                          navigate(`/projects/${project.id}`)
+                        }
+                      >
+                        Continue
+                      </button>
+
+                    </div>
+
+                  </div>
+
+                ))}
+
+              </div>
+
+            ) : (
+
+              <div className="empty-projects">
+
+                <div className="empty-project-icon">
+
+                  <svg
+                    width="42"
+                    height="42"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="1.5"
+                  >
+                    <path d="M4 19V5a2 2 0 012-2h12a2 2 0 012 2v14a2 2 0 01-2 2H6a2 2 0 01-2-2z" />
+                    <path d="M8.5 11.5l2 2 3-4 3.5 5" />
+                    <circle cx="9" cy="8" r="1" />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  No projects yet
+                </h3>
+
+                <p>
+                  Start your first drawing project and it
+                  will appear here.
+                </p>
+
+                <button
+                  className="dashboard-primary-btn small"
+                  onClick={handleStartDrawing}
+                >
+                  Start Your First Drawing
+                </button>
+
+              </div>
+
+            )}
+
           </div>
-        </div>
-      </div>
-    </div>
+
+        </section>
+
+
+        {/* ============================== */}
+        {/* HOW IT WORKS */}
+        {/* ============================== */}
+
+        <section className="dashboard-section workflow-section">
+
+          <div className="dashboard-container">
+
+            <div className="center-heading">
+
+              <span className="section-label">
+                SIMPLE PROCESS
+              </span>
+
+              <h2>
+                How DrawAI Works
+              </h2>
+
+              <p>
+                Follow the AI-generated drawing stages from
+                your reference image to the final artwork.
+              </p>
+
+            </div>
+
+
+            <div className="workflow-grid">
+
+
+              {/* Step 1 */}
+
+              <div className="workflow-card">
+
+                <div className="workflow-number">
+                  01
+                </div>
+
+                <div className="workflow-icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M12 16V4" />
+                    <path d="M7 9l5-5 5 5" />
+                    <path d="M5 20h14" />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  Upload Reference
+                </h3>
+
+                <p>
+                  Upload the image you want to learn
+                  how to draw.
+                </p>
+
+              </div>
+
+
+              {/* Step 2 */}
+
+              <div className="workflow-card">
+
+                <div className="workflow-number">
+                  02
+                </div>
+
+                <div className="workflow-icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="8" cy="8" r="4" />
+                    <rect
+                      x="12"
+                      y="12"
+                      width="8"
+                      height="8"
+                      rx="1"
+                    />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  Basic Shapes
+                </h3>
+
+                <p>
+                  AI identifies simple shapes and
+                  structures inside your image.
+                </p>
+
+              </div>
+
+
+              {/* Step 3 */}
+
+              <div className="workflow-card">
+
+                <div className="workflow-number">
+                  03
+                </div>
+
+                <div className="workflow-icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M4 17c4-7 8-7 16 0" />
+                    <path d="M4 12c4-7 8-7 16 0" />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  Curves & Outline
+                </h3>
+
+                <p>
+                  Refine basic shapes into detailed
+                  outlines and curves.
+                </p>
+
+              </div>
+
+
+              {/* Step 4 */}
+
+              <div className="workflow-card">
+
+                <div className="workflow-number">
+                  04
+                </div>
+
+                <div className="workflow-icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="5" />
+                    <path d="M12 2v2" />
+                    <path d="M12 20v2" />
+                    <path d="M4.93 4.93l1.42 1.42" />
+                    <path d="M17.66 17.66l1.41 1.41" />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  Add Shading
+                </h3>
+
+                <p>
+                  Learn where highlights, shadows and
+                  different tones should appear.
+                </p>
+
+              </div>
+
+
+              {/* Step 5 */}
+
+              <div className="workflow-card">
+
+                <div className="workflow-number">
+                  05
+                </div>
+
+                <div className="workflow-icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <circle cx="12" cy="12" r="9" />
+                    <circle cx="9" cy="9" r="1" />
+                    <circle cx="15" cy="9" r="1" />
+                    <circle cx="9" cy="15" r="1" />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  Colouring
+                </h3>
+
+                <p>
+                  Apply suitable colours to complete
+                  your artwork.
+                </p>
+
+              </div>
+
+
+              {/* Step 6 */}
+
+              <div className="workflow-card">
+
+                <div className="workflow-number">
+                  06
+                </div>
+
+                <div className="workflow-icon">
+
+                  <svg
+                    width="30"
+                    height="30"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                  >
+                    <path d="M8 12l3 3 5-6" />
+                    <circle cx="12" cy="12" r="9" />
+                  </svg>
+
+                </div>
+
+                <h3>
+                  Final Artwork
+                </h3>
+
+                <p>
+                  Compare your drawing and complete
+                  the final artwork.
+                </p>
+
+              </div>
+
+            </div>
+
+          </div>
+
+        </section>
+
+
+        {/* ============================== */}
+        {/* FINAL CTA */}
+        {/* ============================== */}
+
+        <section className="dashboard-cta-section">
+
+          <div className="dashboard-container">
+
+            <div className="dashboard-cta">
+
+              <div>
+
+                <span>
+                  CREATE WITH DRAWAI
+                </span>
+
+                <h2>
+                  Ready to create something?
+                </h2>
+
+                <p>
+                  Upload a reference image and start your
+                  step-by-step drawing journey.
+                </p>
+
+              </div>
+
+              <button
+                onClick={handleStartDrawing}
+                className="cta-button"
+              >
+                Upload Reference Image
+
+                <svg
+                  width="18"
+                  height="18"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                >
+                  <path d="M5 12h14" />
+                  <path d="M13 6l6 6-6 6" />
+                </svg>
+
+              </button>
+
+            </div>
+
+          </div>
+
+        </section>
+
+      </main>
+
+      <Footer />
+    </>
   );
 };
 
