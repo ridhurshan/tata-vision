@@ -1,12 +1,15 @@
 // src/pages/Dashboard/index.jsx
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../styles/Dashboard.css';
 
 import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
 import { useAuth } from '../context/AuthContext';
+import { getProjectsByUser } from '../services/projectService';
+
+const BACKEND_URL = 'http://localhost:5000';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -17,17 +20,38 @@ const Dashboard = () => {
     user?.full_name ||
     'Artist';
 
-  // Temporary values.
-  // Later we can connect these to your real projects API.
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    if (!user) return;
+
+    const fetchProjects = async () => {
+      try {
+        const response = await getProjectsByUser(user.id);
+        setProjects(response.data);
+      } catch (err) {
+        console.error('Error fetching projects:', err);
+      }
+    };
+
+    fetchProjects();
+  }, [user]);
+
   const stats = {
-    totalProjects: 0,
-    inProgress: 0,
-    completed: 0
+    totalProjects: projects.length,
+    inProgress: projects.filter((p) => p.status === 'Processing').length,
+    completed: projects.filter((p) => p.status === 'Completed').length
   };
 
-  // Temporary recent projects.
-  // Later we will replace this with projects from your database.
-  const recentProjects = [];
+  const recentProjects = [...projects]
+    .sort((a, b) => new Date(b.created_at) - new Date(a.created_at))
+    .slice(0, 3)
+    .map((p) => ({
+      id: p.id,
+      image: p.input_image ? `${BACKEND_URL}${p.input_image}` : '',
+      title: p.title,
+      stage: p.status
+    }));
 
   const handleStartDrawing = () => {
     navigate('/upload');

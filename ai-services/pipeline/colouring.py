@@ -1,6 +1,42 @@
 import os
+from pathlib import Path
 import cv2
 import numpy as np
+
+
+def _load_line_mask(curve_path, fallback_rgb):
+    """Prepare the black-line mask used by the XCI-style notebook."""
+
+    if curve_path and Path(curve_path).is_file():
+        curve_bgr = cv2.imread(str(curve_path), cv2.IMREAD_COLOR)
+        if curve_bgr is None:
+            raise ValueError(f"Could not read curve image: {curve_path}")
+        curve_gray = cv2.cvtColor(curve_bgr, cv2.COLOR_BGR2GRAY)
+        curve_gray = cv2.resize(
+            curve_gray,
+            (fallback_rgb.shape[1], fallback_rgb.shape[0]),
+            interpolation=cv2.INTER_AREA
+        )
+        _, binary = cv2.threshold(
+            curve_gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU
+        )
+        return binary == 0
+
+    gray = cv2.cvtColor(fallback_rgb, cv2.COLOR_RGB2GRAY)
+    smooth = cv2.bilateralFilter(gray, 9, 55, 55)
+    adaptive = cv2.adaptiveThreshold(
+        smooth, 255, cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY, 9, 7
+    )
+    canny = cv2.Canny(smooth, 55, 135)
+    return (adaptive < 128) | (canny > 0)
+
+
+def _save_rgb(path, image):
+    path = Path(path)
+    path.parent.mkdir(parents=True, exist_ok=True)
+    if not cv2.imwrite(str(path), cv2.cvtColor(image, cv2.COLOR_RGB2BGR)):
+        raise IOError(f"Could not save colouring preview: {path}")
 
 
 # ============================================================
@@ -11,7 +47,9 @@ def generate_colouring(
     input_path,
     output_path,
     number_of_colours=8,
-    min_region_area=80
+    min_region_area=80,
+    curve_path=None,
+    shading_path=None
 ):
 
     print(
@@ -150,6 +188,150 @@ def generate_colouring(
         ),
         5
     )
+
+
+    # ========================================================
+    # 5A. CREATE XCI-STYLE FOUR-STAGE COLOUR PREVIEWS
+    # ========================================================
+
+    # Reuse the clustered palette so the previews and number
+    # guide always describe the same colours.
+    colour_lut = sorted_centers.astype(np.uint8)
+    simplified_colours = colour_lut[label_map_smooth]
+
+    # Controlled saturation and paper whitening from the notebook.
+    hsv = cv2.cvtColor(
+        simplified_colours,
+        cv2.COLOR_RGB2HSV
+    ).astype(np.float32)
+    hsv[:, :, 1] = np.clip(
+        hsv[:, :, 1] * 1.35,
+        0,
+        255
+    )
+    colour_base = cv2.cvtColor(
+        hsv.astype(np.uint8),
+        cv2.COLOR_HSV2RGB
+    )
+    colour_base = np.clip(
+        colour_base.astype(np.float32) * 0.92
+        + 255.0 * 0.08,
+        0,
+        255
+    ).astype(np.uint8)
+
+    if shading_path and Path(shading_path).is_file():
+        shading = cv2.imread(
+            str(shading_path),
+            cv2.IMREAD_GRAYSCALE
+        )
+        if shading is None:
+            raise ValueError(
+                f"Could not read shading image: {shading_path}"
+            )
+        shading = cv2.resize(
+            shading,
+            (width, height),
+            interpolation=cv2.INTER_AREA
+        )
+        base_lab = cv2.cvtColor(
+            colour_base,
+            cv2.COLOR_RGB2LAB
+        ).astype(np.float32)
+        base_lab[:, :, 0] = (
+            0.45 * base_lab[:, :, 0]
+            + 0.55 * shading
+        )
+        colour_base = cv2.cvtColor(
+            np.clip(base_lab, 0, 255).astype(np.uint8),
+            cv2.COLOR_LAB2RGB
+        )
+
+    line_mask = _load_line_mask(
+        curve_path,
+        colouring_input
+    )
+    black_white_contour = np.full(
+        (height, width, 3),
+        255,
+        dtype=np.uint8
+    )
+    black_white_contour[line_mask] = (0, 0, 0)
+
+    coloured_outline = np.full_like(
+        colouring_input,
+        255
+    )
+    coloured_outline[line_mask] = colour_base[line_mask]
+
+    final_coloured_sketch = colour_base.copy()
+    final_coloured_sketch[line_mask] = (18, 18, 18)
+
+    # The notebook's five cumulative colouring stages reveal the
+    # largest colour regions first, then add progressively smaller
+    # regions until the complete coloured sketch is visible.
+    number_of_stages = 5
+    cluster_counts = np.bincount(
+        label_map_smooth.ravel(),
+        minlength=number_of_colours
+    )
+    cluster_order = np.argsort(
+        cluster_counts
+    )[::-1]
+    cluster_groups = np.array_split(
+        cluster_order,
+        number_of_stages
+    )
+
+    progressive_stages = []
+    revealed = np.zeros(
+        (height, width),
+        dtype=bool
+    )
+
+    for cluster_group in cluster_groups:
+        for cluster_id in cluster_group:
+            revealed |= (
+                label_map_smooth
+                ==
+                cluster_id
+            )
+
+        progressive_stage = np.full_like(
+            colouring_input,
+            255
+        )
+        progressive_stage[revealed] = colour_base[revealed]
+        progressive_stage[line_mask] = (18, 18, 18)
+        progressive_stages.append(progressive_stage)
+
+    colouring_steps_directory = (
+        Path(output_path).parent
+        / "colouring_steps"
+    )
+    preview_images = [
+        ("01_original.png", colouring_input),
+        ("02_black_white_contour.png", black_white_contour),
+        ("03_coloured_outline.png", coloured_outline),
+        ("04_final_coloured_sketch.png", final_coloured_sketch),
+    ]
+
+    preview_images.extend(
+        (
+            f"05_colour_stage_{index}.png",
+            progressive_stage
+        )
+        for index, progressive_stage in enumerate(
+            progressive_stages,
+            start=1
+        )
+    )
+
+    for filename, preview_image in preview_images:
+        _save_rgb(
+            colouring_steps_directory / filename,
+            preview_image
+        )
 
 
     # ========================================================
@@ -658,5 +840,15 @@ def generate_colouring(
             final_colouring_guide,
 
         "colours":
-            corresponding_colours
+            corresponding_colours,
+
+        "preview_directory":
+            str(colouring_steps_directory),
+
+        "preview_files":
+            [
+                filename
+                for filename, _
+                in preview_images
+            ]
     }

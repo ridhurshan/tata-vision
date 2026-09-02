@@ -9,6 +9,9 @@ import Navbar from '../common/Navbar';
 
 import { jsPDF } from 'jspdf';
 
+const SHADING_PREVIEW_COUNT = 10;
+const COLOURING_PREVIEW_COUNT = 6;
+
 const ViewProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
@@ -23,6 +26,8 @@ const ViewProject = () => {
 
   // Stores the image selected for the enlarged preview
   const [selectedStage, setSelectedStage] = useState(null);
+  const [selectedShadingIndex, setSelectedShadingIndex] = useState(0);
+  const [selectedColouringIndex, setSelectedColouringIndex] = useState(0);
 
   // Fetch project details
   useEffect(() => {
@@ -67,6 +72,30 @@ const ViewProject = () => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setSelectedStage(null);
+      }
+
+      if (selectedStage?.id === 3 && event.key === 'ArrowLeft') {
+        setSelectedShadingIndex((current) =>
+          (current - 1 + SHADING_PREVIEW_COUNT) % SHADING_PREVIEW_COUNT
+        );
+      }
+
+      if (selectedStage?.id === 3 && event.key === 'ArrowRight') {
+        setSelectedShadingIndex((current) =>
+          (current + 1) % SHADING_PREVIEW_COUNT
+        );
+      }
+
+      if (selectedStage?.id === 4 && event.key === 'ArrowLeft') {
+        setSelectedColouringIndex((current) =>
+          (current - 1 + COLOURING_PREVIEW_COUNT) % COLOURING_PREVIEW_COUNT
+        );
+      }
+
+      if (selectedStage?.id === 4 && event.key === 'ArrowRight') {
+        setSelectedColouringIndex((current) =>
+          (current + 1) % COLOURING_PREVIEW_COUNT
+        );
       }
     };
 
@@ -520,6 +549,12 @@ const handleDownload = async () => {
     }
 
     setActiveStage(stage.id);
+    if (stage.id === 3) {
+      setSelectedShadingIndex(0);
+    }
+    if (stage.id === 4) {
+      setSelectedColouringIndex(0);
+    }
     setSelectedStage(stage);
 };
 
@@ -564,6 +599,66 @@ const handleDownload = async () => {
   // These URLs use larger images so they do not become too blurry
   // when shown inside the enlarged preview.
  //const BACKEND_URL = 'http://localhost:5000';
+
+  const shadingPreviews = [
+      ['Luminance Baseline', '01_luminance.png'],
+      ['Relative Depth', '02_relative_depth.png'],
+      ['Fused Shading', '03_fused_shading.png'],
+      ['6-Level Shading', '04_quantized_shading.png'],
+      ['Shading Stage 1', '05_stage_1.png'],
+      ['Shading Stage 2', '05_stage_2.png'],
+      ['Shading Stage 3', '05_stage_3.png'],
+      ['Shading Stage 4', '05_stage_4.png'],
+      ['Shading Stage 5', '05_stage_5.png'],
+      ['Final Pencil Hatching', '06_hatched_shading.png'],
+  ].map(([title, filename]) => ({
+      title,
+      image: BACKEND_URL + '/outputs/' + projectId + '/shading_steps/' + filename,
+  }));
+
+  const showPreviousShading = () => {
+    setSelectedShadingIndex((current) =>
+      (current - 1 + shadingPreviews.length) % shadingPreviews.length
+    );
+  };
+
+  const showNextShading = () => {
+    setSelectedShadingIndex((current) =>
+      (current + 1) % shadingPreviews.length
+    );
+  };
+
+  const colouringPreviews = [
+      {
+        title: 'Number & Colour Guide',
+        image: project.colouring_image
+          ? BACKEND_URL + project.colouring_image
+          : BACKEND_URL + '/outputs/' + projectId + '/colouring.png',
+      },
+      ...[
+        ['Colour Stage 1', '05_colour_stage_1.png'],
+        ['Colour Stage 2', '05_colour_stage_2.png'],
+        ['Colour Stage 3', '05_colour_stage_3.png'],
+        ['Colour Stage 4', '05_colour_stage_4.png'],
+        ['Colour Stage 5', '05_colour_stage_5.png'],
+      ].map(([title, filename]) => ({
+        title,
+        image: BACKEND_URL + '/outputs/' + projectId + '/colouring_steps/' + filename,
+      })),
+  ];
+
+  const showPreviousColouring = () => {
+    setSelectedColouringIndex((current) =>
+      (current - 1 + colouringPreviews.length) % colouringPreviews.length
+    );
+  };
+
+  const showNextColouring = () => {
+    setSelectedColouringIndex((current) =>
+      (current + 1) % colouringPreviews.length
+    );
+  };
+
 
   const drawingStages = [
       {
@@ -827,13 +922,65 @@ const handleDownload = async () => {
               &times;
             </button>
 
-            <div className="image-lightbox-image-wrapper">
-              <img
-                src={selectedStage.image}
-                alt={selectedStage.name}
-                className="image-lightbox-image"
-              />
-            </div>
+            {selectedStage.id === 3 ? (
+              <div className="shading-gallery">
+                <div className="shading-main-preview">
+                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousShading} aria-label="Show previous shading image">
+                    &#8249;
+                  </button>
+                  <img src={shadingPreviews[selectedShadingIndex].image} alt={shadingPreviews[selectedShadingIndex].title} className="shading-main-image" />
+                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-next" onClick={showNextShading} aria-label="Show next shading image">
+                    &#8250;
+                  </button>
+                  <div className="shading-main-label" aria-live="polite">
+                    <strong>{shadingPreviews[selectedShadingIndex].title}</strong>
+                    <span>{selectedShadingIndex + 1} / {shadingPreviews.length}</span>
+                  </div>
+                </div>
+
+                <div className="shading-preview-grid" aria-label="Shading image variations">
+                  {shadingPreviews.map((preview, index) => (
+                    <button type="button" className={'shading-preview-card ' + (selectedShadingIndex === index ? 'active' : '')} key={preview.image} onClick={() => setSelectedShadingIndex(index)} aria-label={'Show ' + preview.title} aria-pressed={selectedShadingIndex === index}>
+                      <img src={preview.image} alt="" loading="lazy" />
+                      <span>{preview.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : selectedStage.id === 4 ? (
+              <div className="shading-gallery colouring-gallery">
+                <div className="shading-main-preview">
+                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousColouring} aria-label="Show previous colouring image">
+                    &#8249;
+                  </button>
+                  <img src={colouringPreviews[selectedColouringIndex].image} alt={colouringPreviews[selectedColouringIndex].title} className="shading-main-image" />
+                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-next" onClick={showNextColouring} aria-label="Show next colouring image">
+                    &#8250;
+                  </button>
+                  <div className="shading-main-label" aria-live="polite">
+                    <strong>{colouringPreviews[selectedColouringIndex].title}</strong>
+                    <span>{selectedColouringIndex + 1} / {colouringPreviews.length}</span>
+                  </div>
+                </div>
+
+                <div className="shading-preview-grid" aria-label="Colouring image stages">
+                  {colouringPreviews.map((preview, index) => (
+                    <button type="button" className={'shading-preview-card ' + (selectedColouringIndex === index ? 'active' : '')} key={preview.image} onClick={() => setSelectedColouringIndex(index)} aria-label={'Show ' + preview.title} aria-pressed={selectedColouringIndex === index}>
+                      <img src={preview.image} alt="" loading="lazy" />
+                      <span>{preview.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : (
+              <div className="image-lightbox-image-wrapper">
+                <img
+                  src={selectedStage.image}
+                  alt={selectedStage.name}
+                  className="image-lightbox-image"
+                />
+              </div>
+            )}
 
             <div className="image-lightbox-bottom">
               <div>
