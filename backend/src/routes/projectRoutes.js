@@ -12,6 +12,11 @@ const upload =
         "../middleware/uploadMiddleware"
     );
 
+const {
+    protect,
+    adminOnly
+} = require("../middleware/authMiddleware");
+
 
 // ======================================================
 // CREATE PROJECT + UPLOAD IMAGE
@@ -19,6 +24,7 @@ const upload =
 
 router.post(
     "/",
+    protect,
     upload.single("image"),
     projectController.createProject
 );
@@ -30,30 +36,36 @@ router.post(
 
 router.get(
     "/",
+    protect,
+    adminOnly,
     projectController.getProjects
 );
 
 
 router.get(
     "/user/:userId",
+    protect,
     projectController.getProjectsByUser
 );
 
 
 router.get(
     "/:id",
+    protect,
     projectController.getProject
 );
 
 
 router.put(
     "/:id",
+    protect,
     projectController.updateProject
 );
 
 
 router.delete(
     "/:id",
+    protect,
     projectController.deleteProject
 );
 

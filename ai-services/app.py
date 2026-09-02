@@ -78,6 +78,11 @@ CURVE_MODEL_PATH = os.path.join(
     "Hayao_64.onnx"
 )
 
+PAINTING_MODEL_PATH = os.path.join(
+    MODELS_DIR,
+    "Paprika_54.onnx"
+)
+
 
 # ============================================================
 # VALIDATE MODEL FILES
@@ -98,6 +103,14 @@ if not os.path.isfile(
 
     raise FileNotFoundError(
         f"ONNX model not found: {CURVE_MODEL_PATH}"
+    )
+
+if not os.path.isfile(
+    PAINTING_MODEL_PATH
+):
+
+    raise FileNotFoundError(
+        f"Painting ONNX model not found: {PAINTING_MODEL_PATH}"
     )
 
 
@@ -128,6 +141,11 @@ def health():
         "curve_model":
             os.path.basename(
                 CURVE_MODEL_PATH
+            ),
+
+        "painting_model":
+            os.path.basename(
+                PAINTING_MODEL_PATH
             ),
 
         "shading_model":
@@ -440,7 +458,8 @@ def process_image():
             number_of_colours=8,
             min_region_area=80,
             curve_path=curves_path,
-            shading_path=shading_path
+            shading_path=shading_path,
+            painting_model_path=PAINTING_MODEL_PATH
         )
 
 
@@ -626,6 +645,10 @@ def process_image():
                     (
                         "Colour Stage 5",
                         "05_colour_stage_5.png"
+                    ),
+                    (
+                        "Realistic Paprika Painting",
+                        "06_realistic_paprika_painting.png"
                     )
                 ]
             ]
