@@ -9,7 +9,7 @@ import Footer from '../common/Footer';
 
 const Projects = () => {
   const BACKEND_URL = 'http://localhost:5000';
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -18,6 +18,8 @@ const Projects = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    if (authLoading) return;
+
     if (!user) {
       navigate('/login');
       return;
@@ -38,7 +40,7 @@ const Projects = () => {
     };
 
     fetchProjects();
-  }, [user, navigate]);
+  }, [user, authLoading, navigate]);
 
   const handleViewProject = (projectId) => {
     navigate(`/projects/${projectId}`);

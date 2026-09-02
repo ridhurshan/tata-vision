@@ -1,12 +1,551 @@
-import os
+from pathlib import Path
+from threading import Lock
+
 import cv2
 import numpy as np
+import torch
+import torch.nn.functional as F
 
-from sketchify import sketch
+from PIL import Image
+from transformers import (
+    AutoImageProcessor,
+    AutoModelForDepthEstimation
+)
 
 
 # ============================================================
-# GENERATE SHADED PENCIL SKETCH
+# DEPTH ANYTHING V2 SETTINGS
+# ============================================================
+
+MODEL_ID = (
+    "depth-anything/"
+    "Depth-Anything-V2-Small-hf"
+)
+
+DEVICE = torch.device(
+    "cuda"
+    if torch.cuda.is_available()
+    else "cpu"
+)
+
+
+# ============================================================
+# MODEL CACHE
+# ============================================================
+
+_depth_processor = None
+_depth_model = None
+_model_lock = Lock()
+
+
+def get_depth_model():
+    """
+    Load Depth Anything V2 only once and reuse it.
+    """
+
+    global _depth_processor
+    global _depth_model
+
+    if (
+        _depth_processor is not None
+        and _depth_model is not None
+    ):
+
+        return (
+            _depth_processor,
+            _depth_model
+        )
+
+    with _model_lock:
+
+        if (
+            _depth_processor is None
+            or _depth_model is None
+        ):
+
+            print(
+                "Loading Depth Anything V2 on:",
+                DEVICE
+            )
+
+            _depth_processor = (
+                AutoImageProcessor.from_pretrained(
+                    MODEL_ID,
+                    use_fast=False
+                )
+            )
+
+            _depth_model = (
+                AutoModelForDepthEstimation
+                .from_pretrained(
+                    MODEL_ID
+                )
+                .to(DEVICE)
+                .eval()
+            )
+
+            print(
+                "Depth model loaded:",
+                MODEL_ID
+            )
+
+    return (
+        _depth_processor,
+        _depth_model
+    )
+
+
+# ============================================================
+# ROBUST NORMALIZATION
+# ============================================================
+
+def robust_normalize(
+    array,
+    low_percentile=2.0,
+    high_percentile=98.0
+):
+
+    array = np.asarray(
+        array,
+        dtype=np.float32
+    )
+
+    low, high = np.percentile(
+        array,
+        [
+            low_percentile,
+            high_percentile
+        ]
+    )
+
+    if high <= low:
+
+        return np.zeros_like(
+            array,
+            dtype=np.float32
+        )
+
+    normalized = (
+        array - low
+    ) / (
+        high - low
+    )
+
+    return np.clip(
+        normalized,
+        0.0,
+        1.0
+    )
+
+
+# ============================================================
+# PREDICT RELATIVE DEPTH
+# ============================================================
+
+def predict_depth(
+    reference_image
+):
+
+    processor, model = get_depth_model()
+
+    inputs = processor(
+        images=reference_image,
+        return_tensors="pt"
+    )
+
+    inputs = {
+        key: value.to(DEVICE)
+        for key, value in inputs.items()
+    }
+
+    with torch.inference_mode():
+
+        predicted_depth = (
+            model(
+                **inputs
+            ).predicted_depth
+        )
+
+    target_height = reference_image.height
+    target_width = reference_image.width
+
+    predicted_depth = F.interpolate(
+        predicted_depth.unsqueeze(1),
+        size=(
+            target_height,
+            target_width
+        ),
+        mode="bicubic",
+        align_corners=False
+    )
+
+    predicted_depth = (
+        predicted_depth
+        .squeeze()
+        .float()
+        .cpu()
+        .numpy()
+    )
+
+    return robust_normalize(
+        predicted_depth
+    )
+
+
+# ============================================================
+# CREATE LUMINANCE MAP
+# ============================================================
+
+def create_luminance_map(
+    reference_image
+):
+
+    rgb_image = np.asarray(
+        reference_image,
+        dtype=np.uint8
+    )
+
+    luminance = cv2.cvtColor(
+        rgb_image,
+        cv2.COLOR_RGB2GRAY
+    )
+
+    return (
+        luminance.astype(
+            np.float32
+        ) / 255.0
+    )
+
+
+# ============================================================
+# CREATE DEPTH-AWARE SHADING
+# ============================================================
+
+def create_depth_aware_shading(
+    luminance,
+    depth_map,
+    depth_weight=0.30,
+    invert_depth=False,
+    bilateral_diameter=9,
+    bilateral_sigma_colour=40,
+    bilateral_sigma_space=40
+):
+
+    depth_weight = float(
+        np.clip(
+            depth_weight,
+            0.0,
+            1.0
+        )
+    )
+
+    if invert_depth:
+
+        geometry_tone = (
+            1.0 - depth_map
+        )
+
+    else:
+
+        geometry_tone = depth_map
+
+    fused_shading = (
+
+        (1.0 - depth_weight)
+        * luminance
+
+        +
+
+        depth_weight
+        * geometry_tone
+
+    )
+
+    fused_uint8 = np.clip(
+        fused_shading * 255.0,
+        0,
+        255
+    ).astype(np.uint8)
+
+    smoothed_uint8 = cv2.bilateralFilter(
+        fused_uint8,
+        bilateral_diameter,
+        bilateral_sigma_colour,
+        bilateral_sigma_space
+    )
+
+    return (
+        smoothed_uint8.astype(
+            np.float32
+        ) / 255.0
+    )
+
+
+# ============================================================
+# QUANTIZE SHADING
+# ============================================================
+
+def quantize_shading(
+    shading,
+    tone_levels=6
+):
+
+    tone_levels = max(
+        2,
+        int(tone_levels)
+    )
+
+    quantized = np.round(
+
+        shading
+        * (tone_levels - 1)
+
+    ) / (
+        tone_levels - 1
+    )
+
+    return np.clip(
+        quantized,
+        0.0,
+        1.0
+    )
+
+
+# ============================================================
+# CREATE PROGRESSIVE STAGES
+# ============================================================
+
+def create_progressive_stages(
+    quantized_map,
+    number_of_stages=5
+):
+
+    number_of_stages = max(
+        1,
+        int(number_of_stages)
+    )
+
+    thresholds = np.linspace(
+        0.20,
+        1.0,
+        number_of_stages
+    )
+
+    stages = []
+
+    for threshold in thresholds:
+
+        stage = np.ones_like(
+            quantized_map,
+            dtype=np.float32
+        )
+
+        tone_mask = (
+            quantized_map <= threshold
+        )
+
+        stage[
+            tone_mask
+        ] = quantized_map[
+            tone_mask
+        ]
+
+        stages.append(
+            stage
+        )
+
+    return (
+        stages,
+        thresholds
+    )
+
+
+# ============================================================
+# ADD PENCIL HATCHING
+# ============================================================
+
+def add_hatching(
+    shading,
+    spacing=8,
+    dark_threshold=0.58,
+    very_dark_threshold=0.32
+):
+
+    spacing = max(
+        2,
+        int(spacing)
+    )
+
+    base = np.clip(
+        shading * 255.0,
+        0,
+        255
+    ).astype(np.uint8)
+
+    hatched = base.copy()
+
+    height, width = (
+        hatched.shape
+    )
+
+    dark_mask = (
+        shading < dark_threshold
+    )
+
+    very_dark_mask = (
+        shading < very_dark_threshold
+    )
+
+    diagonal_lines = np.zeros(
+        (
+            height,
+            width
+        ),
+        dtype=np.uint8
+    )
+
+    for offset in range(
+        -height,
+        width,
+        spacing
+    ):
+
+        start_point = (
+            max(offset, 0),
+            max(-offset, 0)
+        )
+
+        end_point = (
+            min(
+                width - 1,
+                height + offset - 1
+            ),
+            min(
+                height - 1,
+                width - offset - 1
+            )
+        )
+
+        cv2.line(
+            diagonal_lines,
+            start_point,
+            end_point,
+            255,
+            1
+        )
+
+    cross_lines = np.zeros(
+        (
+            height,
+            width
+        ),
+        dtype=np.uint8
+    )
+
+    for total in range(
+        0,
+        width + height,
+        spacing
+    ):
+
+        start_point = (
+            max(
+                0,
+                total - height + 1
+            ),
+            min(
+                height - 1,
+                total
+            )
+        )
+
+        end_point = (
+            min(
+                width - 1,
+                total
+            ),
+            max(
+                0,
+                total - width + 1
+            )
+        )
+
+        cv2.line(
+            cross_lines,
+            start_point,
+            end_point,
+            255,
+            1
+        )
+
+    diagonal_mask = (
+        (diagonal_lines > 0)
+        & dark_mask
+    )
+
+    hatched[
+        diagonal_mask
+    ] = np.minimum(
+        hatched[
+            diagonal_mask
+        ],
+        85
+    )
+
+    cross_mask = (
+        (cross_lines > 0)
+        & very_dark_mask
+    )
+
+    hatched[
+        cross_mask
+    ] = np.minimum(
+        hatched[
+            cross_mask
+        ],
+        45
+    )
+
+    return (
+        hatched.astype(
+            np.float32
+        ) / 255.0
+    )
+
+
+# ============================================================
+# SAVE GRAYSCALE IMAGE
+# ============================================================
+
+def save_grayscale(
+    output_path,
+    image_array
+):
+
+    output_path = Path(
+        output_path
+    )
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    output_array = np.clip(
+        image_array * 255.0,
+        0,
+        255
+    ).astype(np.uint8)
+
+    Image.fromarray(
+        output_array
+    ).save(
+        output_path
+    )
+
+
+# ============================================================
+# GENERATE DEPTH-AWARE SHADING
 # ============================================================
 
 def generate_shading(
@@ -15,291 +554,268 @@ def generate_shading(
     output_path,
     temporary_directory,
     shading_scale=5,
-    dodge_blur_ksize=25,
-    dodge_weight=0.55,
-    clahe_clip_limit=2.5,
-    clahe_tile_grid=(8, 8),
-    gamma=0.85,
-    grain_strength=10,
-    line_softness=1,
-    line_blend="multiply"
+    depth_weight=0.30,
+    invert_depth=False,
+    tone_levels=6,
+    number_of_stages=5,
+    add_pencil_hatching=True,
+    hatching_spacing=8
 ):
     """
-    dodge_blur_ksize : bigger = softer, more diffuse shading gradients
-    dodge_weight      : 0..1, how much of the final tone comes from the
-                         dodge pass vs. the sketchify pass
-    clahe_clip_limit  : higher = punchier local contrast (darker darks,
-                         brighter lights) - this is what makes it read
-                         as "shaded" instead of "flat gray"
-    gamma             : <1 brightens midtones, >1 darkens them
-    grain_strength    : 0 = no grain, ~5-15 = subtle pencil tooth,
-                         20+ = heavy sketchy texture
-    line_softness     : gaussian blur radius applied to the curve layer
-                         before blending, so lines don't look pasted on
-    line_blend        : "multiply" (recommended, preserves shading under
-                         lines) or "minimum" (old hard-cut behaviour)
+    Generate depth-aware shading using Depth Anything V2.
+
+    curve_path and shading_scale are retained so this function
+    remains compatible with the existing TataVision pipeline.
     """
 
     print(
-        "\n[Stage 3] Pencil shading started"
+        "\n[Stage 3] Depth-aware shading started"
     )
 
-    # ========================================================
-    # READ ORIGINAL COLOURED IMAGE
-    # ========================================================
-
-    image_bgr = cv2.imread(
+    input_path = Path(
         input_path
     )
 
-    if image_bgr is None:
-        raise ValueError(
-            f"Could not read original image: {input_path}"
-        )
-
-    # ========================================================
-    # CREATE TEMPORARY DIRECTORY
-    # ========================================================
-
-    os.makedirs(
-        temporary_directory,
-        exist_ok=True
-    )
-
-    shading_input_path = os.path.join(
-        temporary_directory,
-        "shading_model_input.png"
-    )
-
-    shading_output_folder = os.path.join(
-        temporary_directory,
-        "shading_output"
-    )
-
-    shading_output_name = (
-        "pencil_shading"
-    )
-
-    os.makedirs(
-        shading_output_folder,
-        exist_ok=True
-    )
-
-    # ========================================================
-    # SAVE ORIGINAL COLOURED IMAGE FOR SKETCHIFY
-    # ========================================================
-
-    success = cv2.imwrite(
-        shading_input_path,
-        image_bgr
-    )
-
-    if not success:
-        raise IOError(
-            "Could not save shading input."
-        )
-
-    print(
-        "Shading input prepared:",
-        shading_input_path
-    )
-
-    # ========================================================
-    # RUN SKETCHIFY (existing model-based shading pass)
-    # ========================================================
-
-    sketch.normalsketch(
-        shading_input_path,
-        shading_output_folder,
-        shading_output_name,
-        scale=shading_scale
-    )
-
-    print(
-        "Sketchify pencil shading generated."
-    )
-
-    shading_generated_path = os.path.join(
-        shading_output_folder,
-        shading_output_name + ".png"
-    )
-
-    sketchify_shading = cv2.imread(
-        shading_generated_path,
-        cv2.IMREAD_GRAYSCALE
-    )
-
-    if sketchify_shading is None:
-        raise ValueError(
-            "Could not load generated pencil shading."
-        )
-
-    # ========================================================
-    # LOAD STAGE 2 CURVES
-    # ========================================================
-
-    final_outline_curves = cv2.imread(
-        curve_path,
-        cv2.IMREAD_GRAYSCALE
-    )
-
-    if final_outline_curves is None:
-        raise ValueError(
-            f"Could not read curve image: {curve_path}"
-        )
-
-    target_h, target_w = final_outline_curves.shape
-
-    # ========================================================
-    # MATCH IMAGE SIZES (shading + a same-size grayscale of
-    # the original, needed for the dodge pass below)
-    # ========================================================
-
-    if sketchify_shading.shape != (target_h, target_w):
-        sketchify_shading = cv2.resize(
-            sketchify_shading,
-            (target_w, target_h),
-            interpolation=cv2.INTER_AREA
-        )
-
-    original_gray = cv2.cvtColor(image_bgr, cv2.COLOR_BGR2GRAY)
-    if original_gray.shape != (target_h, target_w):
-        original_gray = cv2.resize(
-            original_gray,
-            (target_w, target_h),
-            interpolation=cv2.INTER_AREA
-        )
-
-    # ========================================================
-    # PASS 1: CLASSIC "DODGE" PENCIL SHADING
-    # --------------------------------------------------------
-    # This is the technique real pencil-sketch filters use.
-    # It derives light/shadow directly from the photo's own
-    # tonal structure, which is what gives it the soft,
-    # gradual light-to-dark falloff of an actual drawing,
-    # rather than a uniformly filtered gray.
-    # ========================================================
-
-    inverted_gray = 255 - original_gray
-
-    k = dodge_blur_ksize if dodge_blur_ksize % 2 == 1 else dodge_blur_ksize + 1
-    blurred_inverted = cv2.GaussianBlur(inverted_gray, (k, k), 0)
-
-    dodge_shading = cv2.divide(
-        original_gray,
-        255 - blurred_inverted,
-        scale=256.0
-    )
-
-    # ========================================================
-    # BLEND SKETCHIFY OUTPUT + DODGE SHADING
-    # --------------------------------------------------------
-    # sketchify contributes its learned stroke/shading style,
-    # dodge contributes accurate light/dark placement. Blending
-    # both keeps the model's style while fixing flatness.
-    # ========================================================
-
-    dodge_weight = float(np.clip(dodge_weight, 0.0, 1.0))
-
-    combined_shading = cv2.addWeighted(
-        dodge_shading, dodge_weight,
-        sketchify_shading, 1.0 - dodge_weight,
-        0
-    ).astype(np.uint8)
-
-    # ========================================================
-    # LOCAL CONTRAST (CLAHE) - makes shadows read as genuinely
-    # dark and highlights as genuinely bright, instead of
-    # everything sitting in the mid-gray zone.
-    # ========================================================
-
-    clahe = cv2.createCLAHE(
-        clipLimit=clahe_clip_limit,
-        tileGridSize=clahe_tile_grid
-    )
-    contrasted_shading = clahe.apply(combined_shading)
-
-    # ========================================================
-    # GAMMA CORRECTION - fine-tune overall darkness/brightness
-    # curve so midtones don't wash out.
-    # ========================================================
-
-    normalized = contrasted_shading.astype(np.float32) / 255.0
-    gamma_corrected = np.power(normalized, gamma)
-    toned_shading = (gamma_corrected * 255.0).astype(np.uint8)
-
-    # ========================================================
-    # PENCIL GRAIN / TOOTH
-    # --------------------------------------------------------
-    # Real graphite on paper has fine random texture. A thin
-    # multiplicative noise layer breaks up any flat regions and
-    # reads as "hand-drawn" rather than "digitally filtered".
-    # ========================================================
-
-    if grain_strength > 0:
-        rng = np.random.default_rng()
-        noise = rng.normal(
-            loc=0.0,
-            scale=grain_strength,
-            size=toned_shading.shape
-        )
-        grainy_shading = toned_shading.astype(np.float32) + noise
-        grainy_shading = np.clip(grainy_shading, 0, 255).astype(np.uint8)
-    else:
-        grainy_shading = toned_shading
-
-    # ========================================================
-    # SOFTEN THE LINE LAYER SLIGHTLY
-    # --------------------------------------------------------
-    # A dead-sharp vector-like line over hand-shaded tone looks
-    # pasted on. A very small blur lets ink taper like real
-    # pencil pressure does.
-    # ========================================================
-
-    if line_softness > 0:
-        lk = line_softness * 2 + 1
-        soft_curves = cv2.GaussianBlur(
-            final_outline_curves, (lk, lk), 0
-        )
-    else:
-        soft_curves = final_outline_curves
-
-    # ========================================================
-    # COMBINE SHADING + CURVES
-    # --------------------------------------------------------
-    # "multiply" preserves the shading's tonal variation under
-    # and around the lines (recommended). "minimum" reproduces
-    # the original hard-cut behaviour if you need it.
-    # ========================================================
-
-    if line_blend == "minimum":
-        final_shaded_pencil_sketch = np.minimum(
-            grainy_shading, soft_curves
-        )
-    else:
-        shading_f = grainy_shading.astype(np.float32) / 255.0
-        curves_f = soft_curves.astype(np.float32) / 255.0
-        final_shaded_pencil_sketch = (
-            shading_f * curves_f * 255.0
-        ).astype(np.uint8)
-
-    # ========================================================
-    # SAVE FINAL SHADING OUTPUT
-    # ========================================================
-
-    success = cv2.imwrite(
-        output_path,
-        final_shaded_pencil_sketch
-    )
-
-    if not success:
-        raise IOError(
-            f"Could not save shading output: {output_path}"
-        )
-
-    print(
-        "[Stage 3] Shading output saved:",
+    output_path = Path(
         output_path
     )
 
-    return final_shaded_pencil_sketch
+    temporary_directory = Path(
+        temporary_directory
+    )
+
+    # Retained for compatibility.
+    _ = curve_path
+    _ = shading_scale
+
+    if not input_path.is_file():
+
+        raise FileNotFoundError(
+            f"Input image not found: {input_path}"
+        )
+
+    output_path.parent.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    temporary_directory.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    # Permanent outputs displayed by the frontend.
+    shading_steps_directory = (
+        output_path.parent
+        / "shading_steps"
+    )
+
+    shading_steps_directory.mkdir(
+        parents=True,
+        exist_ok=True
+    )
+
+    with Image.open(
+        input_path
+    ) as source_image:
+
+        reference_image = (
+            source_image
+            .convert("RGB")
+            .copy()
+        )
+
+    print(
+        "Input resolution:",
+        reference_image.size
+    )
+
+    # ========================================================
+    # DEPTH MODEL
+    # ========================================================
+
+    depth_map = predict_depth(
+        reference_image
+    )
+
+    print(
+        "Relative depth generated."
+    )
+
+    # ========================================================
+    # LUMINANCE
+    # ========================================================
+
+    luminance = create_luminance_map(
+        reference_image
+    )
+
+    # ========================================================
+    # DEPTH + LUMINANCE FUSION
+    # ========================================================
+
+    fused_shading = (
+        create_depth_aware_shading(
+            luminance=luminance,
+            depth_map=depth_map,
+            depth_weight=depth_weight,
+            invert_depth=invert_depth
+        )
+    )
+
+    # ========================================================
+    # QUANTIZED SHADING
+    # ========================================================
+
+    quantized_shading = (
+        quantize_shading(
+            fused_shading,
+            tone_levels=tone_levels
+        )
+    )
+
+    # ========================================================
+    # PROGRESSIVE STAGES
+    # ========================================================
+
+    stages, thresholds = (
+        create_progressive_stages(
+            quantized_shading,
+            number_of_stages=number_of_stages
+        )
+    )
+
+    # ========================================================
+    # FINAL HATCHED SHADING
+    # ========================================================
+
+    if add_pencil_hatching:
+
+        final_shading = add_hatching(
+            quantized_shading,
+            spacing=hatching_spacing
+        )
+
+    else:
+
+        final_shading = (
+            quantized_shading
+        )
+
+    # ========================================================
+    # SAVE ALL SHADING PREVIEW IMAGES
+    # ========================================================
+
+    save_grayscale(
+        shading_steps_directory
+        / "01_luminance.png",
+        luminance
+    )
+
+    save_grayscale(
+        shading_steps_directory
+        / "02_relative_depth.png",
+        depth_map
+    )
+
+    save_grayscale(
+        shading_steps_directory
+        / "03_fused_shading.png",
+        fused_shading
+    )
+
+    save_grayscale(
+        shading_steps_directory
+        / "04_quantized_shading.png",
+        quantized_shading
+    )
+
+    for index, stage in enumerate(
+        stages,
+        start=1
+    ):
+
+        save_grayscale(
+            shading_steps_directory
+            / f"05_stage_{index}.png",
+            stage
+        )
+
+    save_grayscale(
+        shading_steps_directory
+        / "06_hatched_shading.png",
+        final_shading
+    )
+
+    # Main shading output retained for the existing website.
+    save_grayscale(
+        output_path,
+        final_shading
+    )
+
+    if not output_path.is_file():
+
+        raise RuntimeError(
+            "Main shading output was not created."
+        )
+
+    expected_files = [
+        "01_luminance.png",
+        "02_relative_depth.png",
+        "03_fused_shading.png",
+        "04_quantized_shading.png",
+        "05_stage_1.png",
+        "05_stage_2.png",
+        "05_stage_3.png",
+        "05_stage_4.png",
+        "05_stage_5.png",
+        "06_hatched_shading.png"
+    ]
+
+    missing_files = [
+        filename
+        for filename in expected_files
+        if not (
+            shading_steps_directory
+            / filename
+        ).is_file()
+    ]
+
+    if missing_files:
+
+        raise RuntimeError(
+            "Some shading preview files were not created: "
+            + ", ".join(missing_files)
+        )
+
+    print(
+        "[Stage 3] Main shading saved:",
+        output_path
+    )
+
+    print(
+        "[Stage 3] Shading previews saved:",
+        shading_steps_directory
+    )
+
+    print(
+        "[Stage 3] Thresholds:",
+        [
+            round(
+                float(value),
+                2
+            )
+            for value in thresholds
+        ]
+    )
+
+    return {
+        "main_output":
+            str(output_path),
+
+        "preview_directory":
+            str(shading_steps_directory),
+
+        "preview_files":
+            expected_files
+    }
