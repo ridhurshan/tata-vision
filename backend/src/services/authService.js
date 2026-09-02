@@ -409,6 +409,16 @@ exports.login = async (user) => {
         throw error;
     }
 
+    if (savedUser.status === "Deactivated") {
+        const error = new Error(
+            "Your account has been deactivated. Please contact support."
+        );
+
+        error.statusCode = 403;
+        error.code = "ACCOUNT_DEACTIVATED";
+        throw error;
+    }
+
     const token = jwt.sign(
         {
             id: savedUser.id,
