@@ -12,6 +12,7 @@ import Landing from "../pages/Landing";
 import ViewProject from "../pages/ViewProject";
 import VerifyEmail from "../pages/VerifyEmail";
 import ForgotPassword from "../pages/ForgotPassword";
+import ProtectedRoute from "../common/ProtectedRoute";
 
 export default function AppRoutes() {
   return (
@@ -20,15 +21,19 @@ export default function AppRoutes() {
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
       <Route path="/verify-email" element={<VerifyEmail />} />
-      <Route path="/dashboard" element={<Dashboard />} />
-      <Route path="/projects" element={<Projects />} />
-      <Route path="/upload" element={<Upload />} />
-      <Route path="/profile" element={<Profile />} />
-      <Route path="/admin" element={<Admin />} />
       <Route path="/landing" element={<Landing />} />
-      <Route path="/projects/:projectId" element={<ViewProject />} />
+      <Route element={<ProtectedRoute />}>
+        <Route path="/dashboard" element={<Dashboard />} />
+        <Route path="/projects" element={<Projects />} />
+        <Route path="/upload" element={<Upload />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/projects/:projectId" element={<ViewProject />} />
+      </Route>
+      <Route element={<ProtectedRoute adminOnly />}>
+        <Route path="/admin" element={<Admin />} />
+      </Route>
       <Route path="*" element={<NotFound />} />
-      <Route path="/forgot-password"element={<ForgotPassword />}/>
+      <Route path="/forgot-password" element={<ForgotPassword />} />
     </Routes>
   );
 }
