@@ -3,6 +3,8 @@ from pathlib import Path
 import cv2
 import numpy as np
 
+from pipeline.curves import get_onnx_processor
+
 
 def _load_line_mask(curve_path, fallback_rgb):
     """Prepare the black-line mask used by the XCI-style notebook."""
@@ -49,7 +51,8 @@ def generate_colouring(
     number_of_colours=8,
     min_region_area=80,
     curve_path=None,
-    shading_path=None
+    shading_path=None,
+    painting_model_path=None
 ):
 
     print(
@@ -309,6 +312,89 @@ def generate_colouring(
         Path(output_path).parent
         / "colouring_steps"
     )
+
+    realistic_painted = None
+
+    if (
+        painting_model_path
+        and Path(painting_model_path).is_file()
+    ):
+        print(
+            "Applying painting model:",
+            Path(painting_model_path).name
+        )
+
+        painting_processor = get_onnx_processor(
+            painting_model_path
+        )
+        raw_painting_path = (
+            colouring_steps_directory
+            / "painting_model_raw.png"
+        )
+        model_painting = painting_processor.process(
+            input_path=input_path,
+            output_path=raw_painting_path
+        )
+        model_painting_rgb = np.asarray(
+            model_painting.convert("RGB"),
+            dtype=np.uint8
+        )
+
+        # Keep Paprika's brush-like shapes while restoring enough
+        # source detail and chroma to remain a recognisable painting.
+        painted_blend = cv2.addWeighted(
+            model_painting_rgb,
+            0.72,
+            colouring_input,
+            0.28,
+            0
+        )
+        original_lab = cv2.cvtColor(
+            colouring_input,
+            cv2.COLOR_RGB2LAB
+        ).astype(np.float32)
+        painted_lab = cv2.cvtColor(
+            painted_blend,
+            cv2.COLOR_RGB2LAB
+        ).astype(np.float32)
+        painted_lab[:, :, 1:] = (
+            0.65 * painted_lab[:, :, 1:]
+            + 0.35 * original_lab[:, :, 1:]
+        )
+        realistic_painted = cv2.cvtColor(
+            np.clip(
+                painted_lab,
+                0,
+                255
+            ).astype(np.uint8),
+            cv2.COLOR_LAB2RGB
+        )
+
+        # Add soft, locally coloured contours instead of hard
+        # cartoon-black outlines.
+        line_alpha = cv2.GaussianBlur(
+            line_mask.astype(np.float32),
+            (0, 0),
+            0.85
+        )
+        line_alpha = np.clip(
+            line_alpha * 0.38,
+            0.0,
+            0.62
+        )[:, :, None]
+        local_outline = np.clip(
+            realistic_painted.astype(np.float32) * 0.30,
+            8,
+            76
+        )
+        realistic_painted = np.clip(
+            realistic_painted.astype(np.float32)
+            * (1.0 - line_alpha)
+            + local_outline * line_alpha,
+            0,
+            255
+        ).astype(np.uint8)
+
     preview_images = [
         ("01_original.png", colouring_input),
         ("02_black_white_contour.png", black_white_contour),
@@ -326,6 +412,14 @@ def generate_colouring(
             start=1
         )
     )
+
+    if realistic_painted is not None:
+        preview_images.append(
+            (
+                "06_realistic_paprika_painting.png",
+                realistic_painted
+            )
+        )
 
     for filename, preview_image in preview_images:
         _save_rgb(

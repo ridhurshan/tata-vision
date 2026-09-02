@@ -132,12 +132,6 @@ const Upload = () => {
 
 
           formData.append(
-              "user_id",
-              user.id
-          );
-
-
-          formData.append(
               "title",
               title
           );

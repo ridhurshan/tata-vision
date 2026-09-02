@@ -10,7 +10,7 @@ import Navbar from '../common/Navbar';
 import { jsPDF } from 'jspdf';
 
 const SHADING_PREVIEW_COUNT = 10;
-const COLOURING_PREVIEW_COUNT = 6;
+const COLOURING_PREVIEW_COUNT = 7;
 
 const ViewProject = () => {
   const { projectId } = useParams();
@@ -641,6 +641,7 @@ const handleDownload = async () => {
         ['Colour Stage 3', '05_colour_stage_3.png'],
         ['Colour Stage 4', '05_colour_stage_4.png'],
         ['Colour Stage 5', '05_colour_stage_5.png'],
+        ['Realistic Painted Result', '06_realistic_paprika_painting.png'],
       ].map(([title, filename]) => ({
         title,
         image: BACKEND_URL + '/outputs/' + projectId + '/colouring_steps/' + filename,

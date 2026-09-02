@@ -50,7 +50,7 @@ exports.createProject = async (req, res) => {
         // ==================================================
 
         const projectData = {
-        user_id: req.body.user_id,
+        user_id: req.user.id,
         title: req.body.title,
         description: req.body.description,
 
@@ -234,6 +234,25 @@ exports.getProject = async (req, res) => {
                 req.params.id
             );
 
+        if (!result) {
+            return res.status(404).json({
+                message: "Project not found."
+            });
+        }
+
+        const isAdmin =
+            String(req.user.role).toLowerCase()
+            === "admin";
+
+        if (
+            !isAdmin
+            && Number(result.user_id) !== Number(req.user.id)
+        ) {
+            return res.status(403).json({
+                message: "You do not have access to this project."
+            });
+        }
+
         res.json(result);
 
     } catch (err) {
@@ -253,9 +272,25 @@ exports.getProjectsByUser = async (req, res) => {
 
     try {
 
+        const requestedUserId = Number(
+            req.params.userId
+        );
+        const isAdmin =
+            String(req.user.role).toLowerCase()
+            === "admin";
+
+        if (
+            !isAdmin
+            && requestedUserId !== Number(req.user.id)
+        ) {
+            return res.status(403).json({
+                message: "You can only view your own projects."
+            });
+        }
+
         const result =
             await projectService.getProjectsByUser(
-                req.params.userId
+                requestedUserId
             );
 
         res.json(result);
@@ -276,6 +311,30 @@ exports.getProjectsByUser = async (req, res) => {
 exports.updateProject = async (req, res) => {
 
     try {
+
+        const project =
+            await projectService.getProject(
+                req.params.id
+            );
+
+        if (!project) {
+            return res.status(404).json({
+                message: "Project not found."
+            });
+        }
+
+        const isAdmin =
+            String(req.user.role).toLowerCase()
+            === "admin";
+
+        if (
+            !isAdmin
+            && Number(project.user_id) !== Number(req.user.id)
+        ) {
+            return res.status(403).json({
+                message: "You cannot update this project."
+            });
+        }
 
         const result =
             await projectService.updateProject(
@@ -301,6 +360,30 @@ exports.updateProject = async (req, res) => {
 exports.deleteProject = async (req, res) => {
 
     try {
+
+        const project =
+            await projectService.getProject(
+                req.params.id
+            );
+
+        if (!project) {
+            return res.status(404).json({
+                message: "Project not found."
+            });
+        }
+
+        const isAdmin =
+            String(req.user.role).toLowerCase()
+            === "admin";
+
+        if (
+            !isAdmin
+            && Number(project.user_id) !== Number(req.user.id)
+        ) {
+            return res.status(403).json({
+                message: "You cannot delete this project."
+            });
+        }
 
         const result =
             await projectService.deleteProject(
