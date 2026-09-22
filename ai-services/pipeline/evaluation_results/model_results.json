@@ -1,0 +1,262 @@
+{
+  "summary": [
+    {
+      "Model/component": "Automatic grayscale colorization (Caffe)",
+      "Evaluation metrics": "Global SSIM, color MAE/RMSE, PSNR, chroma MAE, RGB histogram intersection",
+      "Sample count": 0,
+      "Measured mean result": "Not measured (paired output unavailable)"
+    },
+    {
+      "Model/component": "SAM ViT-H geometric extraction",
+      "Evaluation metrics": "Edge precision, edge recall, edge F1-score, edge-density ratio",
+      "Sample count": 7,
+      "Measured mean result": "edge_precision=0.9572; edge_recall=0.5102; edge_f1=0.6332; edge_density_ratio=0.5672"
+    },
+    {
+      "Model/component": "AnimeGANv2 Hayao curve extraction",
+      "Evaluation metrics": "Edge precision, edge recall, edge F1-score, edge-density ratio",
+      "Sample count": 7,
+      "Measured mean result": "edge_precision=0.9999; edge_recall=0.8918; edge_f1=0.9406; edge_density_ratio=0.8575"
+    },
+    {
+      "Model/component": "Depth Anything V2 Small shading",
+      "Evaluation metrics": "Global SSIM, tonal correlation, grayscale MAE, edge F1-score",
+      "Sample count": 7,
+      "Measured mean result": "global_ssim=0.7533; tonal_correlation=0.8229; grayscale_mae=36.5202; edge_f1=0.8969"
+    },
+    {
+      "Model/component": "AnimeGANv2 Paprika final coloring",
+      "Evaluation metrics": "Color MAE/RMSE, PSNR, chroma MAE, RGB histogram intersection, edge F1-score",
+      "Sample count": 7,
+      "Measured mean result": "colour_mae=78.54; colour_rmse=107.2029; psnr_db=7.7344; chroma_mae=18.1726; rgb_histogram_intersection=0.3684; edge_f1=0.6788"
+    }
+  ],
+  "per_project": {
+    "colorizer": [],
+    "sam": [
+      {
+        "project_id": "73",
+        "edge_precision": 0.9126380272347732,
+        "edge_recall": 0.7450068310454753,
+        "edge_f1": 0.8203464827407827,
+        "edge_density_ratio": 0.8336803070717586
+      },
+      {
+        "project_id": "74",
+        "edge_precision": 0.9617062307727627,
+        "edge_recall": 0.6594968671093239,
+        "edge_f1": 0.7824340418578243,
+        "edge_density_ratio": 0.6789176719972567
+      },
+      {
+        "project_id": "75",
+        "edge_precision": 0.9259652851576338,
+        "edge_recall": 0.5525721121892861,
+        "edge_f1": 0.6921199211486069,
+        "edge_density_ratio": 0.7504984713545129
+      },
+      {
+        "project_id": "77",
+        "edge_precision": 0.983484326144472,
+        "edge_recall": 0.5157408584382017,
+        "edge_f1": 0.6766469184780373,
+        "edge_density_ratio": 0.5284945553154528
+      },
+      {
+        "project_id": "78",
+        "edge_precision": 0.9471846948952761,
+        "edge_recall": 0.5634184275447818,
+        "edge_f1": 0.7065539630692198,
+        "edge_density_ratio": 0.5914941542421968
+      },
+      {
+        "project_id": "79",
+        "edge_precision": 0.9690931465354032,
+        "edge_recall": 0.4716211499869121,
+        "edge_f1": 0.6344697561712338,
+        "edge_density_ratio": 0.4608672890672716
+      },
+      {
+        "project_id": "80",
+        "edge_precision": 1.0,
+        "edge_recall": 0.06365221723966119,
+        "edge_f1": 0.11968614591872585,
+        "edge_density_ratio": 0.12652590931738913
+      }
+    ],
+    "hayao": [
+      {
+        "project_id": "73",
+        "edge_precision": 1.0,
+        "edge_recall": 0.9853945741981653,
+        "edge_f1": 0.9926435651675268,
+        "edge_density_ratio": 0.8396656040595928
+      },
+      {
+        "project_id": "74",
+        "edge_precision": 1.0,
+        "edge_recall": 0.8438230618161414,
+        "edge_f1": 0.9152972205315479,
+        "edge_density_ratio": 0.6503008198509929
+      },
+      {
+        "project_id": "75",
+        "edge_precision": 1.0,
+        "edge_recall": 0.9696929416456201,
+        "edge_f1": 0.9846133081387501,
+        "edge_density_ratio": 1.1287163808764233
+      },
+      {
+        "project_id": "77",
+        "edge_precision": 0.9999589288647939,
+        "edge_recall": 0.9907631032583365,
+        "edge_f1": 0.9953397767305036,
+        "edge_density_ratio": 1.0316512012202872
+      },
+      {
+        "project_id": "78",
+        "edge_precision": 1.0,
+        "edge_recall": 0.7737852622546391,
+        "edge_f1": 0.872467799479954,
+        "edge_density_ratio": 0.7254370910651078
+      },
+      {
+        "project_id": "79",
+        "edge_precision": 0.9998892150889049,
+        "edge_recall": 0.7940624727336184,
+        "edge_f1": 0.8851682104738164,
+        "edge_density_ratio": 0.7875839804554576
+      },
+      {
+        "project_id": "80",
+        "edge_precision": 0.9995547144606479,
+        "edge_recall": 0.8850896860986547,
+        "edge_f1": 0.9388461485868165,
+        "edge_density_ratio": 0.8392189835575485
+      }
+    ],
+    "depth": [
+      {
+        "project_id": "73",
+        "global_ssim": 0.761733769624989,
+        "tonal_correlation": 0.8822911708037889,
+        "grayscale_mae": 43.0205701462766,
+        "edge_f1": 0.9838309401982639
+      },
+      {
+        "project_id": "74",
+        "global_ssim": 0.756178676595536,
+        "tonal_correlation": 0.8596037807474287,
+        "grayscale_mae": 40.22660259347507,
+        "edge_f1": 0.9070918997869181
+      },
+      {
+        "project_id": "75",
+        "global_ssim": 0.765562221892456,
+        "tonal_correlation": 0.7952240746217178,
+        "grayscale_mae": 34.08297220865885,
+        "edge_f1": 0.9681710561406761
+      },
+      {
+        "project_id": "77",
+        "global_ssim": 0.7766453082442999,
+        "tonal_correlation": 0.7806223211449782,
+        "grayscale_mae": 19.68990749782986,
+        "edge_f1": 0.6957379671619126
+      },
+      {
+        "project_id": "78",
+        "global_ssim": 0.7406232949947256,
+        "tonal_correlation": 0.828376598588684,
+        "grayscale_mae": 34.97986214803754,
+        "edge_f1": 0.9209800413271011
+      },
+      {
+        "project_id": "79",
+        "global_ssim": 0.7115637607580405,
+        "tonal_correlation": 0.7544417884560998,
+        "grayscale_mae": 43.64978790283203,
+        "edge_f1": 0.8840816748615535
+      },
+      {
+        "project_id": "80",
+        "global_ssim": 0.76059964319636,
+        "tonal_correlation": 0.859895192906843,
+        "grayscale_mae": 39.99203109741211,
+        "edge_f1": 0.9184980383404507
+      }
+    ],
+    "paprika": [
+      {
+        "project_id": "73",
+        "raw_model_output_saved": false,
+        "colour_mae": 67.57747915281472,
+        "colour_rmse": 104.94767395821766,
+        "psnr_db": 7.7113472607071865,
+        "chroma_mae": 13.267308011968085,
+        "rgb_histogram_intersection": 0.6907517453457447,
+        "edge_f1": 0.6382446495958872
+      },
+      {
+        "project_id": "74",
+        "raw_model_output_saved": false,
+        "colour_mae": 48.67834723240469,
+        "colour_rmse": 82.25568129699579,
+        "psnr_db": 9.827485531989682,
+        "chroma_mae": 13.44320759255865,
+        "rgb_histogram_intersection": 0.27925678152492667,
+        "edge_f1": 0.7964507280901738
+      },
+      {
+        "project_id": "75",
+        "raw_model_output_saved": false,
+        "colour_mae": 97.57637532552083,
+        "colour_rmse": 130.74501696221245,
+        "psnr_db": 5.802300693771048,
+        "chroma_mae": 45.29127756754557,
+        "rgb_histogram_intersection": 0.1516571044921875,
+        "edge_f1": 0.6261729397677783
+      },
+      {
+        "project_id": "77",
+        "raw_model_output_saved": true,
+        "colour_mae": 127.6345847800926,
+        "colour_rmse": 139.20399792460864,
+        "psnr_db": 5.2577694417423295,
+        "chroma_mae": 22.381208631727432,
+        "rgb_histogram_intersection": 0.17727774160879628,
+        "edge_f1": 0.6413866988136011
+      },
+      {
+        "project_id": "78",
+        "raw_model_output_saved": true,
+        "colour_mae": 101.15575449729806,
+        "colour_rmse": 123.70515628027138,
+        "psnr_db": 6.283047563162466,
+        "chroma_mae": 13.900897237627987,
+        "rgb_histogram_intersection": 0.22887780858930604,
+        "edge_f1": 0.798640327332732
+      },
+      {
+        "project_id": "79",
+        "raw_model_output_saved": true,
+        "colour_mae": 68.78333028157552,
+        "colour_rmse": 95.07787148393002,
+        "psnr_db": 8.569214597100023,
+        "chroma_mae": 14.419563293457031,
+        "rgb_histogram_intersection": 0.2594858805338542,
+        "edge_f1": 0.7424678592185218
+      },
+      {
+        "project_id": "80",
+        "raw_model_output_saved": true,
+        "colour_mae": 38.37391662597656,
+        "colour_rmse": 74.48465400026303,
+        "psnr_db": 10.689467514657391,
+        "chroma_mae": 4.504829406738281,
+        "rgb_histogram_intersection": 0.7913029988606771,
+        "edge_f1": 0.5079226644931734
+      }
+    ]
+  }
+}

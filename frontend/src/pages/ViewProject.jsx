@@ -26,6 +26,7 @@ const ViewProject = () => {
 
   // Stores the image selected for the enlarged preview
   const [selectedStage, setSelectedStage] = useState(null);
+  const [selectedGeometricIndex, setSelectedGeometricIndex] = useState(0);
   const [selectedShadingIndex, setSelectedShadingIndex] = useState(0);
   const [selectedColouringIndex, setSelectedColouringIndex] = useState(0);
 
@@ -600,6 +601,28 @@ const handleDownload = async () => {
   // when shown inside the enlarged preview.
  //const BACKEND_URL = 'http://localhost:5000';
 
+  const geometricPreviews = [
+    ['Extraction 1', '01_extraction.png'],
+    ['Extraction 2', '02_extraction.png'],
+    ['Extraction 3', '03_extraction.png'],
+    ['Specific Geometric Shapes', '04_specific_shapes.png'],
+  ].map(([title, filename]) => ({
+    title,
+    image: BACKEND_URL + '/outputs/' + projectId + '/geometric_steps/' + filename,
+  }));
+
+  const showPreviousGeometric = () => {
+    setSelectedGeometricIndex((current) =>
+      (current - 1 + geometricPreviews.length) % geometricPreviews.length
+    );
+  };
+
+  const showNextGeometric = () => {
+    setSelectedGeometricIndex((current) =>
+      (current + 1) % geometricPreviews.length
+    );
+  };
+
   const shadingPreviews = [
       ['Luminance Baseline', '01_luminance.png'],
       ['Relative Depth', '02_relative_depth.png'],
@@ -923,7 +946,32 @@ const handleDownload = async () => {
               &times;
             </button>
 
-            {selectedStage.id === 3 ? (
+            {selectedStage.id === 1 ? (
+              <div className="shading-gallery geometric-gallery">
+                <div className="shading-main-preview">
+                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousGeometric} aria-label="Show previous geometric image">
+                    &#8249;
+                  </button>
+                  <img src={geometricPreviews[selectedGeometricIndex].image} alt={geometricPreviews[selectedGeometricIndex].title} className="shading-main-image" />
+                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-next" onClick={showNextGeometric} aria-label="Show next geometric image">
+                    &#8250;
+                  </button>
+                  <div className="shading-main-label" aria-live="polite">
+                    <strong>{geometricPreviews[selectedGeometricIndex].title}</strong>
+                    <span>{selectedGeometricIndex + 1} / {geometricPreviews.length}</span>
+                  </div>
+                </div>
+
+                <div className="shading-preview-grid" aria-label="Geometric extraction stages">
+                  {geometricPreviews.map((preview, index) => (
+                    <button type="button" className={'shading-preview-card ' + (selectedGeometricIndex === index ? 'active' : '')} key={preview.image} onClick={() => setSelectedGeometricIndex(index)} aria-label={'Show ' + preview.title} aria-pressed={selectedGeometricIndex === index}>
+                      <img src={preview.image} alt="" loading="lazy" />
+                      <span>{preview.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : selectedStage.id === 3 ? (
               <div className="shading-gallery">
                 <div className="shading-main-preview">
                   <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousShading} aria-label="Show previous shading image">
