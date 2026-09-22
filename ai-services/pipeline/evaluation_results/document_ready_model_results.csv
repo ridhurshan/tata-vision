@@ -1,0 +1,6 @@
+Model/component,Evaluation metrics,Sample count,Measured mean result
+Automatic grayscale colorization (Caffe),"Global SSIM, color MAE/RMSE, PSNR, chroma MAE, RGB histogram intersection",0,Not measured (paired output unavailable)
+SAM ViT-H geometric extraction,"Edge precision, edge recall, edge F1-score, edge-density ratio",7,edge_precision=0.9572; edge_recall=0.5102; edge_f1=0.6332; edge_density_ratio=0.5672
+AnimeGANv2 Hayao curve extraction,"Edge precision, edge recall, edge F1-score, edge-density ratio",7,edge_precision=0.9999; edge_recall=0.8918; edge_f1=0.9406; edge_density_ratio=0.8575
+Depth Anything V2 Small shading,"Global SSIM, tonal correlation, grayscale MAE, edge F1-score",7,global_ssim=0.7533; tonal_correlation=0.8229; grayscale_mae=36.5202; edge_f1=0.8969
+AnimeGANv2 Paprika final coloring,"Color MAE/RMSE, PSNR, chroma MAE, RGB histogram intersection, edge F1-score",7,colour_mae=78.54; colour_rmse=107.2029; psnr_db=7.7344; chroma_mae=18.1726; rgb_histogram_intersection=0.3684; edge_f1=0.6788
