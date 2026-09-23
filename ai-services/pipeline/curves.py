@@ -287,6 +287,195 @@ def extract_black_white_curves(
     )
 
 
+def generate_progressive_curve_steps(
+    input_path,
+    geometric_path,
+    output_directory
+):
+    """Generate the five progressive curve images from the demo notebook."""
+
+    original = cv2.imread(str(input_path))
+    geometric = cv2.imread(str(geometric_path))
+
+    if original is None:
+        raise FileNotFoundError(f"Curve input image not found: {input_path}")
+
+    if geometric is None:
+        raise FileNotFoundError(
+            f"Geometric image not found for curve steps: {geometric_path}"
+        )
+
+    original_gray = cv2.cvtColor(original, cv2.COLOR_BGR2GRAY)
+    original_edges = cv2.Canny(
+        cv2.GaussianBlur(original_gray, (5, 5), 0),
+        50,
+        150
+    )
+
+    geometric_gray = cv2.cvtColor(geometric, cv2.COLOR_BGR2GRAY)
+    _, geometric_edges = cv2.threshold(
+        geometric_gray,
+        220,
+        255,
+        cv2.THRESH_BINARY_INV
+    )
+    geometric_edges = cv2.dilate(
+        geometric_edges,
+        np.ones((5, 5), dtype=np.uint8),
+        iterations=1
+    )
+
+    if geometric_edges.shape != original_edges.shape:
+        geometric_edges = cv2.resize(
+            geometric_edges,
+            (original_edges.shape[1], original_edges.shape[0])
+        )
+
+    remaining_curves = cv2.bitwise_and(
+        original_edges,
+        cv2.bitwise_not(geometric_edges)
+    )
+    remaining_curves = cv2.morphologyEx(
+        remaining_curves,
+        cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3)),
+        iterations=1
+    )
+
+    contours, _ = cv2.findContours(
+        remaining_curves,
+        cv2.RETR_TREE,
+        cv2.CHAIN_APPROX_NONE
+    )
+    height, width = remaining_curves.shape
+    image_diagonal = np.hypot(width, height)
+    curve_items = []
+
+    for contour in contours:
+        if len(contour) < 8:
+            continue
+
+        length = cv2.arcLength(contour, False)
+        _, _, box_width, box_height = cv2.boundingRect(contour)
+        box_area = box_width * box_height
+        box_diagonal = np.hypot(box_width, box_height)
+
+        if length < image_diagonal * 0.012:
+            continue
+
+        if box_diagonal < image_diagonal * 0.02:
+            continue
+
+        curve_items.append({
+            "contour": cv2.approxPolyDP(
+                contour,
+                max(1.0, 0.0025 * length),
+                False
+            ),
+            "length": length,
+            "box_area": box_area
+        })
+
+    if not curve_items:
+        raise RuntimeError("No curve components found for progressive steps.")
+
+    maximum_area = max(item["box_area"] for item in curve_items)
+    maximum_length = max(item["length"] for item in curve_items)
+
+    for item in curve_items:
+        item["importance"] = (
+            0.65 * item["box_area"] / maximum_area
+            + 0.35 * item["length"] / maximum_length
+        )
+
+    curve_items.sort(key=lambda item: item["importance"], reverse=True)
+
+    # The saved notebook referenced these groups without defining them.
+    # Stable percentage splits reproduce its intended progressive reveal.
+    major_end = max(1, int(np.ceil(len(curve_items) * 0.20)))
+    feature_end = max(major_end, int(np.ceil(len(curve_items) * 0.55)))
+    major_curves = curve_items[:major_end]
+    feature_curves = curve_items[major_end:feature_end]
+    detail_curves = curve_items[feature_end:]
+
+    silhouette_source = cv2.morphologyEx(
+        original_edges,
+        cv2.MORPH_CLOSE,
+        cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5)),
+        iterations=2
+    )
+    silhouette_contours, _ = cv2.findContours(
+        silhouette_source,
+        cv2.RETR_EXTERNAL,
+        cv2.CHAIN_APPROX_NONE
+    )
+
+    if not silhouette_contours:
+        raise RuntimeError("No silhouette contour found for curve steps.")
+
+    main_silhouette = max(silhouette_contours, key=cv2.contourArea)
+    silhouette_length = cv2.arcLength(main_silhouette, True)
+    smooth_silhouette = cv2.approxPolyDP(
+        main_silhouette,
+        0.0025 * silhouette_length,
+        True
+    )
+
+    def draw_step(items):
+        canvas = np.full((height, width, 3), 255, dtype=np.uint8)
+        cv2.polylines(
+            canvas,
+            [smooth_silhouette],
+            True,
+            (0, 0, 0),
+            2,
+            cv2.LINE_AA
+        )
+
+        for item in items:
+            cv2.polylines(
+                canvas,
+                [item["contour"]],
+                False,
+                (0, 0, 0),
+                2,
+                cv2.LINE_AA
+            )
+
+        return canvas
+
+    detail_split = (
+        max(1, int(len(detail_curves) * 0.55))
+        if detail_curves else 0
+    )
+    steps = [
+        draw_step([]),
+        draw_step(major_curves),
+        draw_step(major_curves + feature_curves),
+        draw_step(
+            major_curves
+            + feature_curves
+            + detail_curves[:detail_split]
+        ),
+        draw_step(curve_items)
+    ]
+    filenames = [
+        "curve_step1_main.png",
+        "curve_step2_major.png",
+        "curve_step3_features.png",
+        "curve_step4_details.png",
+        "curve_step5_final.png"
+    ]
+    output_directory = Path(output_directory)
+    output_directory.mkdir(parents=True, exist_ok=True)
+
+    for filename, image in zip(filenames, steps):
+        destination = output_directory / filename
+
+        if not cv2.imwrite(str(destination), image):
+            raise RuntimeError(f"Could not save curve step: {destination}")
+
+
 def get_onnx_processor(model_path):
 
     absolute_model_path = str(
@@ -317,7 +506,9 @@ def get_onnx_processor(model_path):
 
 def generate_curves(
     input_path,
+    geometric_path,
     output_path,
+    curve_steps_directory,
     temporary_directory,
     model_path
 ):
@@ -404,6 +595,12 @@ def generate_curves(
     )
     final_image.save(
         output_path
+    )
+
+    generate_progressive_curve_steps(
+        input_path=input_path,
+        geometric_path=geometric_path,
+        output_directory=curve_steps_directory
     )
 
 

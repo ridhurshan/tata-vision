@@ -352,6 +352,11 @@ def process_image():
             "curves.png"
         )
 
+        curve_steps_directory = os.path.join(
+            project_output_directory,
+            "curve_steps"
+        )
+
         shading_path = os.path.join(
             project_output_directory,
             "shading.png"
@@ -367,7 +372,7 @@ def process_image():
         # STAGE 1 - GEOMETRIC EXTRACTION
         # ====================================================
 
-        generate_geometric(
+        geometric_result = generate_geometric(
             input_path=input_path,
             output_path=geometric_path,
             checkpoint_path=SAM_CHECKPOINT,
@@ -383,6 +388,18 @@ def process_image():
                 "Geometric output was not created."
             )
 
+        geometric_step_paths = geometric_result.get(
+            "step_paths",
+            []
+        )
+
+        if len(geometric_step_paths) != 4 or not all(
+            os.path.isfile(step_path) for step_path in geometric_step_paths
+        ):
+            raise RuntimeError(
+                "All four SAM geometric step images were not saved."
+            )
+
 
         print(
             "[Stage 1] Geometric extraction completed."
@@ -395,7 +412,9 @@ def process_image():
 
         generate_curves(
             input_path=input_path,
+            geometric_path=geometric_path,
             output_path=curves_path,
+            curve_steps_directory=curve_steps_directory,
             temporary_directory=temporary_directory,
             model_path=CURVE_MODEL_PATH
         )

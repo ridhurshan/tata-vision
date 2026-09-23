@@ -1,0 +1,897 @@
+/* src/pages/ViewProject/ViewProject.css */
+
+.view-project-page {
+  background: #f7f7f9;
+  min-height: 100vh;
+  padding: 32px 24px 64px;
+}
+
+.view-project-container {
+  max-width: 900px;
+  margin: 0 auto;
+}
+
+.view-project-loading,
+.view-project-error {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 60vh;
+  gap: 12px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid #e5e7eb;
+  border-top-color: #2f6fed;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* Page Header */
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 24px;
+  margin-top: 50px;
+}
+
+.page-header h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: #1f2937;
+  margin: 0 0 4px;
+}
+
+.page-subtitle {
+  color: #6b7280;
+  font-size: 14px;
+  margin: 0;
+}
+
+.btn-back-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: 14px;
+  color: #4b5563;
+  text-decoration: none;
+}
+
+.btn-back-link:hover {
+  color: #1f2937;
+}
+
+/* Processing Status Card */
+.processing-status-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 28px;
+}
+
+.processing-status-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.processing-status-top h3 {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.progress-percent {
+  font-size: 14px;
+  font-weight: 600;
+  color: #2f6fed;
+}
+
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: #e5e7eb;
+  border-radius: 999px;
+  overflow: hidden;
+  margin-bottom: 16px;
+}
+
+.progress-fill {
+  height: 100%;
+  background: #2f6fed;
+  border-radius: 999px;
+  transition: width 0.3s ease;
+}
+
+.stage-pills {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 10px;
+}
+
+.stage-pill {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 8px 6px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  color: #9ca3af;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.stage-pill.done {
+  background: #ecfdf3;
+  border-color: #bbf7d0;
+  color: #16a34a;
+}
+
+/* Section blocks */
+.section-block {
+  margin-bottom: 28px;
+}
+
+.section-title {
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 12px;
+}
+
+/* Stage cards row */
+.stage-cards-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.stage-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.stage-card:hover {
+  border-color: #93c5fd;
+}
+
+.stage-card.active {
+  border-color: #2f6fed;
+  box-shadow: 0 0 0 3px rgba(47, 111, 237, 0.15);
+}
+
+.stage-card-image {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  background: #f3f4f6;
+  overflow: hidden;
+}
+
+.stage-card-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+/* Drawing Stages 2x2 grid */
+.drawing-stages-card {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-top: 3px solid #2f6fed;
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.drawing-stages-header {
+  text-align: center;
+  font-size: 18px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  color: #1f2937;
+  padding: 16px 0 12px;
+  font-family: Georgia, 'Times New Roman', serif;
+}
+
+.drawing-stages-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  border-top: 1px solid #e5e7eb;
+}
+
+.drawing-stage-cell {
+  position: relative;
+  cursor: pointer;
+  border-right: 1px solid #e5e7eb;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.drawing-stage-cell:nth-child(2n) {
+  border-right: none;
+}
+
+.drawing-stage-cell:nth-last-child(-n+2) {
+  border-bottom: none;
+}
+
+.drawing-stage-cell img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  display: block;
+}
+
+.drawing-stage-cell.active {
+  outline: 3px solid #2f6fed;
+  outline-offset: -3px;
+  z-index: 1;
+}
+
+.drawing-stage-caption {
+  text-align: center;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  color: #4b5563;
+  padding: 8px 6px;
+  background: #fafafa;
+}
+
+/* =========================================================
+   CLICKABLE DRAWING STAGE IMAGES
+   ========================================================= */
+
+.drawing-stage-cell {
+  width: 100%;
+  padding: 0;
+  overflow: hidden;
+
+  background: #ffffff;
+  border: 2px solid transparent;
+  border-radius: 12px;
+
+  color: inherit;
+  font: inherit;
+  text-align: left;
+
+  cursor: pointer;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease,
+    border-color 0.2s ease;
+}
+
+.drawing-stage-cell:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 28px rgba(15, 23, 42, 0.17);
+}
+
+.drawing-stage-cell.active {
+  border-color: #6c63ff;
+}
+
+.drawing-stage-cell:focus-visible {
+  outline: 3px solid rgba(108, 99, 255, 0.35);
+  outline-offset: 3px;
+}
+
+.drawing-stage-image-wrapper {
+  position: relative;
+
+  width: 100%;
+  aspect-ratio: 4 / 3;
+
+  overflow: hidden;
+  background-color: #e5e7eb;
+}
+
+.drawing-stage-image-wrapper img {
+  width: 100%;
+  height: 100%;
+
+  display: block;
+  object-fit: cover;
+
+  transition: transform 0.35s ease;
+}
+
+.drawing-stage-cell:hover .drawing-stage-image-wrapper img {
+  transform: scale(1.05);
+}
+
+.drawing-stage-hover-overlay {
+  position: absolute;
+  inset: 0;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  background-color: rgba(15, 23, 42, 0.62);
+  color: #ffffff;
+
+  opacity: 0;
+
+  transition: opacity 0.25s ease;
+}
+
+.drawing-stage-hover-overlay span {
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.drawing-stage-cell:hover .drawing-stage-hover-overlay,
+.drawing-stage-cell:focus-visible .drawing-stage-hover-overlay {
+  opacity: 1;
+}
+
+
+/* =========================================================
+   FULL-SCREEN IMAGE LIGHTBOX
+   ========================================================= */
+
+.image-lightbox {
+  position: fixed;
+  inset: 0;
+  z-index: 99999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 30px;
+
+  background-color: rgba(3, 7, 18, 0.88);
+  backdrop-filter: blur(7px);
+  -webkit-backdrop-filter: blur(7px);
+
+  animation: lightboxBackgroundOpen 0.2s ease;
+}
+
+.image-lightbox-content {
+  position: relative;
+
+  width: min(1100px, 94vw);
+  max-height: 92vh;
+
+  display: flex;
+  flex-direction: column;
+
+  overflow: hidden;
+
+  background-color: #ffffff;
+  border-radius: 18px;
+
+  box-shadow: 0 25px 80px rgba(0, 0, 0, 0.5);
+
+  animation: lightboxContentOpen 0.25s ease;
+}
+
+.image-lightbox-image-wrapper {
+  width: 100%;
+  min-height: 300px;
+  max-height: 72vh;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  overflow: hidden;
+
+  background-color: #111827;
+}
+
+.image-lightbox-image {
+  width: 100%;
+  height: 100%;
+  max-height: 72vh;
+
+  display: block;
+  object-fit: contain;
+}
+
+.shading-preview-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 16px;
+  overflow-y: auto;
+  padding: 24px;
+  background-color: #111827;
+}
+
+.shading-preview-card {
+  overflow: hidden;
+  margin: 0;
+  border: 1px solid #374151;
+  border-radius: 10px;
+  background-color: #ffffff;
+}
+
+.shading-preview-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  display: block;
+  object-fit: contain;
+  background-color: #f8fafc;
+}
+
+.shading-preview-card figcaption {
+  padding: 9px 10px;
+  color: #1f2937;
+  font-size: 12px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.image-lightbox-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  z-index: 2;
+
+  width: 44px;
+  height: 44px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 0;
+
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  border-radius: 50%;
+
+  background-color: rgba(15, 23, 42, 0.78);
+  color: #ffffff;
+
+  font-size: 31px;
+  font-weight: 300;
+  line-height: 1;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.image-lightbox-close:hover {
+  background-color: rgba(220, 38, 38, 0.92);
+  transform: rotate(90deg);
+}
+
+.image-lightbox-close:focus-visible {
+  outline: 3px solid rgba(255, 255, 255, 0.75);
+  outline-offset: 3px;
+}
+
+.image-lightbox-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  padding: 18px 22px;
+
+  background-color: #ffffff;
+}
+
+.image-lightbox-stage-number {
+  margin: 0 0 4px;
+
+  color: #6c63ff;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.image-lightbox-caption {
+  margin: 0;
+
+  color: #111827;
+  font-size: 18px;
+  font-weight: 700;
+}
+
+.image-lightbox-done {
+  flex-shrink: 0;
+
+  padding: 10px 18px;
+
+  border: none;
+  border-radius: 8px;
+
+  background-color: #6c63ff;
+  color: #ffffff;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.image-lightbox-done:hover {
+  background-color: #574fd6;
+  transform: translateY(-1px);
+}
+
+.image-lightbox-done:focus-visible {
+  outline: 3px solid rgba(108, 99, 255, 0.35);
+  outline-offset: 3px;
+}
+
+
+/* =========================================================
+   FINAL ARTWORK BAR + BOTTOM ACTIONS
+   ========================================================= */
+
+.final-artwork-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 20px 24px;
+  margin-bottom: 20px;
+}
+
+.final-artwork-bar h4 {
+  margin: 0 0 4px;
+  font-size: 15px;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.final-artwork-bar p {
+  margin: 0;
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.bottom-actions {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 12px;
+  margin-top: 8px;
+}
+
+/* Buttons */
+.btn-outline,
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  padding: 11px 22px;
+  border-radius: 8px;
+
+  font-size: 14px;
+  font-weight: 600;
+
+  cursor: pointer;
+
+  transition:
+    background-color 0.2s ease,
+    border-color 0.2s ease,
+    color 0.2s ease,
+    transform 0.2s ease;
+}
+
+.btn-outline {
+  background: #fff;
+  border: 1px solid #d1d5db;
+  color: #374151;
+}
+
+.btn-outline:hover {
+  border-color: #2f6fed;
+  color: #2f6fed;
+  transform: translateY(-1px);
+}
+
+.btn-primary {
+  background: #2f6fed;
+  border: 1px solid #2f6fed;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #2158c9;
+  border-color: #2158c9;
+  transform: translateY(-1px);
+}
+
+.btn-outline:focus-visible,
+.btn-primary:focus-visible {
+  outline: 3px solid rgba(47, 111, 237, 0.35);
+  outline-offset: 2px;
+}
+
+
+/* =========================================================
+   LIGHTBOX ANIMATIONS
+   ========================================================= */
+
+@keyframes lightboxBackgroundOpen {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes lightboxContentOpen {
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(18px);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+
+/* =========================================================
+   TABLET RESPONSIVE
+   ========================================================= */
+
+@media screen and (max-width: 768px) {
+  .image-lightbox {
+    padding: 18px;
+  }
+
+  .image-lightbox-content {
+    width: 100%;
+    max-height: 94vh;
+
+    border-radius: 14px;
+  }
+
+  .image-lightbox-image-wrapper {
+    max-height: 70vh;
+  }
+
+  .image-lightbox-image {
+    max-height: 70vh;
+  }
+
+  .image-lightbox-bottom {
+    padding: 15px 17px;
+  }
+
+  .image-lightbox-caption {
+    font-size: 16px;
+  }
+}
+
+
+/* =========================================================
+   MOBILE RESPONSIVE
+   ========================================================= */
+
+@media screen and (max-width: 520px) {
+  .image-lightbox {
+    padding: 10px;
+  }
+
+  .image-lightbox-content {
+    max-height: 96vh;
+
+    border-radius: 12px;
+  }
+
+  .image-lightbox-image-wrapper {
+    min-height: 230px;
+    max-height: 72vh;
+  }
+
+  .image-lightbox-image {
+    max-height: 56vh;
+  }
+
+  .shading-preview-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+    padding: 10px;
+  }
+
+  .shading-preview-card figcaption {
+    padding: 7px 5px;
+    font-size: 10px;
+  }
+
+  .image-lightbox-close {
+    top: 9px;
+    right: 9px;
+
+    width: 38px;
+    height: 38px;
+
+    font-size: 27px;
+  }
+
+  .image-lightbox-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 12px;
+
+    padding: 14px;
+  }
+
+  .image-lightbox-done {
+    width: 100%;
+  }
+
+  .drawing-stage-hover-overlay {
+    display: none;
+  }
+
+  .final-artwork-bar {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .final-artwork-bar .btn-outline {
+    width: 100%;
+  }
+
+  .bottom-actions {
+    flex-direction: column;
+  }
+
+  .bottom-actions .btn-outline,
+  .bottom-actions .btn-primary {
+    width: 100%;
+  }
+}
+/* Shading lightbox: large selected image with a single-row thumbnail rail. */
+.shading-gallery {
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  background: #111827;
+}
+
+.shading-main-preview {
+  position: relative;
+  min-height: 300px;
+  height: min(58vh, 620px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.shading-main-image {
+  width: 100%;
+  height: 100%;
+  display: block;
+  object-fit: contain;
+}
+
+.shading-gallery-arrow {
+  position: absolute;
+  top: 50%;
+  z-index: 2;
+  width: 48px;
+  height: 48px;
+  padding: 0 0 5px;
+  border: 1px solid rgba(255, 255, 255, 0.45);
+  border-radius: 50%;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff;
+  font-size: 42px;
+  line-height: 1;
+  cursor: pointer;
+  transform: translateY(-50%);
+}
+
+.shading-gallery-arrow:hover { background: #2f6fed; }
+.shading-gallery-arrow:focus-visible { outline: 3px solid #93c5fd; outline-offset: 3px; }
+.shading-gallery-arrow-previous { left: 18px; }
+.shading-gallery-arrow-next { right: 18px; }
+
+.shading-main-label {
+  position: absolute;
+  left: 18px;
+  bottom: 14px;
+  display: flex;
+  gap: 12px;
+  padding: 8px 12px;
+  border-radius: 8px;
+  background: rgba(15, 23, 42, 0.78);
+  color: #fff;
+  font-size: 12px;
+}
+
+.shading-gallery .shading-preview-grid {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 128px;
+  grid-template-columns: none;
+  gap: 10px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 12px 18px 16px;
+  background: #0b1220;
+}
+
+.shading-gallery .shading-preview-card {
+  overflow: hidden;
+  margin: 0;
+  padding: 0;
+  border: 2px solid transparent;
+  border-radius: 9px;
+  background: #fff;
+  color: #1f2937;
+  cursor: pointer;
+  font: inherit;
+}
+
+.shading-gallery .shading-preview-card:hover { transform: translateY(-2px); }
+.shading-gallery .shading-preview-card.active { border-color: #60a5fa; box-shadow: 0 0 0 2px rgba(96, 165, 250, 0.3); }
+.shading-gallery .shading-preview-card:focus-visible { outline: 3px solid #93c5fd; outline-offset: 2px; }
+.shading-gallery .shading-preview-card img { width: 100%; height: 78px; aspect-ratio: auto; object-fit: cover; }
+.shading-gallery .shading-preview-card span { min-height: 34px; display: flex; align-items: center; justify-content: center; padding: 5px; font-size: 10px; font-weight: 700; }
+
+/* Keep the four geometric extraction steps together beneath the main result. */
+.static-steps-gallery .shading-preview-grid {
+  grid-auto-columns: minmax(150px, 1fr);
+  width: 100%;
+}
+
+.static-steps-gallery .shading-preview-card img {
+  height: 150px;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.static-steps-gallery .shading-preview-card {
+  cursor: default;
+}
+
+.static-steps-gallery .shading-preview-card:hover {
+  transform: none;
+}
+
+@media screen and (max-width: 520px) {
+  .shading-main-preview { min-height: 240px; height: 50vh; }
+  .shading-gallery .shading-preview-grid { grid-auto-columns: 104px; grid-template-columns: none; }
+  .shading-gallery .shading-preview-card img { height: 64px; }
+  .shading-gallery-arrow { width: 40px; height: 40px; font-size: 35px; }
+  .shading-gallery-arrow-previous { left: 8px; }
+  .shading-gallery-arrow-next { right: 8px; }
+  .shading-main-label { left: 8px; bottom: 8px; }
+}

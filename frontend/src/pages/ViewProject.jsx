@@ -26,7 +26,8 @@ const ViewProject = () => {
 
   // Stores the image selected for the enlarged preview
   const [selectedStage, setSelectedStage] = useState(null);
-  const [selectedGeometricIndex, setSelectedGeometricIndex] = useState(0);
+  const [selectedGeometricStep, setSelectedGeometricStep] = useState(null);
+  const [selectedCurveStep, setSelectedCurveStep] = useState(null);
   const [selectedShadingIndex, setSelectedShadingIndex] = useState(0);
   const [selectedColouringIndex, setSelectedColouringIndex] = useState(0);
 
@@ -550,6 +551,12 @@ const handleDownload = async () => {
     }
 
     setActiveStage(stage.id);
+    if (stage.id === 1) {
+      setSelectedGeometricStep(null);
+    }
+    if (stage.id === 2) {
+      setSelectedCurveStep(null);
+    }
     if (stage.id === 3) {
       setSelectedShadingIndex(0);
     }
@@ -608,20 +615,19 @@ const handleDownload = async () => {
     ['Specific Geometric Shapes', '04_specific_shapes.png'],
   ].map(([title, filename]) => ({
     title,
-    image: BACKEND_URL + '/outputs/' + projectId + '/geometric_steps/' + filename,
+    image: BACKEND_URL + '/outputs/' + projectId + '/geometric_steps/' + filename + '?v=3',
   }));
 
-  const showPreviousGeometric = () => {
-    setSelectedGeometricIndex((current) =>
-      (current - 1 + geometricPreviews.length) % geometricPreviews.length
-    );
-  };
-
-  const showNextGeometric = () => {
-    setSelectedGeometricIndex((current) =>
-      (current + 1) % geometricPreviews.length
-    );
-  };
+  const curvePreviews = [
+    ['Main Structure', 'curve_step1_main.png'],
+    ['Major Curves', 'curve_step2_major.png'],
+    ['Important Features', 'curve_step3_features.png'],
+    ['Details', 'curve_step4_details.png'],
+    ['Complete Curves', 'curve_step5_final.png'],
+  ].map(([title, filename]) => ({
+    title,
+    image: BACKEND_URL + '/outputs/' + projectId + '/curve_steps/' + filename + '?v=2',
+  }));
 
   const shadingPreviews = [
       ['Luminance Baseline', '01_luminance.png'],
@@ -690,7 +696,7 @@ const handleDownload = async () => {
           name: 'Geometric Shape Extraction',
           description: 'Basic geometric structure extracted from the reference image.',
           image: project.geometric_image
-              ? `${BACKEND_URL}${project.geometric_image}`
+              ? `${BACKEND_URL}${project.geometric_image}?v=3`
               : null,
       },
 
@@ -699,7 +705,7 @@ const handleDownload = async () => {
           name: 'Curve Extraction',
           description: 'Refined curves and contour lines extracted from the image.',
           image: project.curve_image
-              ? `${BACKEND_URL}${project.curve_image}`
+              ? `${BACKEND_URL}${project.curve_image}?v=2`
               : null,
       },
 
@@ -947,25 +953,60 @@ const handleDownload = async () => {
             </button>
 
             {selectedStage.id === 1 ? (
-              <div className="shading-gallery geometric-gallery">
+              <div className="shading-gallery static-steps-gallery geometric-gallery">
                 <div className="shading-main-preview">
-                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousGeometric} aria-label="Show previous geometric image">
-                    &#8249;
-                  </button>
-                  <img src={geometricPreviews[selectedGeometricIndex].image} alt={geometricPreviews[selectedGeometricIndex].title} className="shading-main-image" />
-                  <button type="button" className="shading-gallery-arrow shading-gallery-arrow-next" onClick={showNextGeometric} aria-label="Show next geometric image">
-                    &#8250;
-                  </button>
-                  <div className="shading-main-label" aria-live="polite">
-                    <strong>{geometricPreviews[selectedGeometricIndex].title}</strong>
-                    <span>{selectedGeometricIndex + 1} / {geometricPreviews.length}</span>
+                  <img
+                    src={selectedGeometricStep?.image || selectedStage.image}
+                    alt={selectedGeometricStep?.title || selectedStage.name}
+                    className="shading-main-image"
+                  />
+                  <div className="shading-main-label">
+                    <strong>{selectedGeometricStep?.title || selectedStage.name}</strong>
+                    <span>{selectedGeometricStep ? 'Geometric step' : 'Main result'}</span>
                   </div>
                 </div>
 
                 <div className="shading-preview-grid" aria-label="Geometric extraction stages">
-                  {geometricPreviews.map((preview, index) => (
-                    <button type="button" className={'shading-preview-card ' + (selectedGeometricIndex === index ? 'active' : '')} key={preview.image} onClick={() => setSelectedGeometricIndex(index)} aria-label={'Show ' + preview.title} aria-pressed={selectedGeometricIndex === index}>
-                      <img src={preview.image} alt="" loading="lazy" />
+                  {geometricPreviews.map((preview) => (
+                    <button
+                      type="button"
+                      className={'shading-preview-card ' + (selectedGeometricStep?.image === preview.image ? 'active' : '')}
+                      key={preview.image}
+                      onClick={() => setSelectedGeometricStep(preview)}
+                      aria-label={'Show ' + preview.title}
+                      aria-pressed={selectedGeometricStep?.image === preview.image}
+                    >
+                      <img src={preview.image} alt={preview.title} loading="lazy" />
+                      <span>{preview.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+            ) : selectedStage.id === 2 ? (
+              <div className="shading-gallery static-steps-gallery curve-gallery">
+                <div className="shading-main-preview">
+                  <img
+                    src={selectedCurveStep?.image || selectedStage.image}
+                    alt={selectedCurveStep?.title || selectedStage.name}
+                    className="shading-main-image"
+                  />
+                  <div className="shading-main-label">
+                    <strong>{selectedCurveStep?.title || selectedStage.name}</strong>
+                    <span>{selectedCurveStep ? 'Curve step' : 'Main result'}</span>
+                  </div>
+                </div>
+
+                <div className="shading-preview-grid" aria-label="Progressive curve extraction stages">
+                  {curvePreviews.map((preview) => (
+                    <button
+                      type="button"
+                      className={'shading-preview-card ' + (selectedCurveStep?.image === preview.image ? 'active' : '')}
+                      key={preview.image}
+                      onClick={() => setSelectedCurveStep(preview)}
+                      aria-label={'Show ' + preview.title}
+                      aria-pressed={selectedCurveStep?.image === preview.image}
+                    >
+                      <img src={preview.image} alt={preview.title} loading="lazy" />
                       <span>{preview.title}</span>
                     </button>
                   ))}
