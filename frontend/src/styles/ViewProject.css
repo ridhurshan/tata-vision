@@ -866,6 +866,26 @@
 .shading-gallery .shading-preview-card img { width: 100%; height: 78px; aspect-ratio: auto; object-fit: cover; }
 .shading-gallery .shading-preview-card span { min-height: 34px; display: flex; align-items: center; justify-content: center; padding: 5px; font-size: 10px; font-weight: 700; }
 
+/* Keep the four geometric extraction steps together beneath the main result. */
+.static-steps-gallery .shading-preview-grid {
+  grid-auto-columns: minmax(150px, 1fr);
+  width: 100%;
+}
+
+.static-steps-gallery .shading-preview-card img {
+  height: 150px;
+  object-fit: contain;
+  background: #ffffff;
+}
+
+.static-steps-gallery .shading-preview-card {
+  cursor: pointer;
+}
+
+.static-steps-gallery .shading-preview-card:hover {
+  transform: none;
+}
+
 @media screen and (max-width: 520px) {
   .shading-main-preview { min-height: 240px; height: 50vh; }
   .shading-gallery .shading-preview-grid { grid-auto-columns: 104px; grid-template-columns: none; }
