@@ -61,6 +61,7 @@ def _draw_simplified_contours(contours, height, width, epsilon_ratio):
     """Create one progressively simplified extraction image."""
     canvas = np.full((height, width, 3), 255, dtype=np.uint8)
     minimum_area = max(50.0, height * width * 0.0002)
+    line_width = max(3, int(round(min(height, width) / 350)))
 
     for contour in contours:
         if cv2.contourArea(contour) < minimum_area:
@@ -69,7 +70,7 @@ def _draw_simplified_contours(contours, height, width, epsilon_ratio):
         if perimeter <= 0:
             continue
         shape = cv2.approxPolyDP(contour, epsilon_ratio * perimeter, True)
-        cv2.drawContours(canvas, [shape], -1, (0, 0, 0), 2, cv2.LINE_AA)
+        cv2.drawContours(canvas, [shape], -1, (0, 0, 0), line_width, cv2.LINE_AA)
 
     return canvas
 
@@ -78,6 +79,7 @@ def _draw_specific_shapes(contours, height, width):
     """Render detected regions as explicit circles, boxes, or polygons."""
     canvas = np.full((height, width, 3), 255, dtype=np.uint8)
     minimum_area = max(80.0, height * width * 0.0003)
+    line_width = max(3, int(round(min(height, width) / 350)))
 
     for contour in contours:
         area = cv2.contourArea(contour)
@@ -99,14 +101,18 @@ def _draw_specific_shapes(contours, height, width):
                 (int(round(center_x)), int(round(center_y))),
                 max(1, int(round(radius))),
                 (0, 0, 0),
-                2,
+                line_width,
                 cv2.LINE_AA,
             )
         elif vertex_count == 4:
             box = np.int32(np.round(cv2.boxPoints(cv2.minAreaRect(contour))))
-            cv2.drawContours(canvas, [box], -1, (0, 0, 0), 2, cv2.LINE_AA)
+            cv2.drawContours(
+                canvas, [box], -1, (0, 0, 0), line_width, cv2.LINE_AA
+            )
         else:
-            cv2.drawContours(canvas, [shape], -1, (0, 0, 0), 2, cv2.LINE_AA)
+            cv2.drawContours(
+                canvas, [shape], -1, (0, 0, 0), line_width, cv2.LINE_AA
+            )
 
     return canvas
 
@@ -117,6 +123,8 @@ def _save_rgb(path, image):
     bgr_image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
     if not cv2.imwrite(str(path), bgr_image):
         raise IOError(f"Could not save: {path}")
+
+    return str(path)
 
 
 def generate_geometric(
@@ -157,23 +165,42 @@ def generate_geometric(
             contour for contour in contours if cv2.contourArea(contour) >= 50
         )
 
+    image_area = float(height * width)
+    clean_contours = []
+    seen_boxes = []
+    for contour in sorted(source_contours, key=cv2.contourArea, reverse=True):
+        area = cv2.contourArea(contour)
+        x, y, box_width, box_height = cv2.boundingRect(contour)
+        if area < max(120.0, image_area * 0.00035):
+            continue
+        if (x <= 2 or y <= 2 or x + box_width >= width - 2 or y + box_height >= height - 2) and area / image_area > 0.18:
+            continue
+        box_area = float(box_width * box_height)
+        overlaps = any(
+            min(x + box_width, old_x + old_width) - max(x, old_x) > 0
+            and min(y + box_height, old_y + old_height) - max(y, old_y) > 0
+            for old_x, old_y, old_width, old_height, old_area in seen_boxes
+        )
+        if overlaps:
+            continue
+        clean_contours.append(contour)
+        seen_boxes.append((x, y, box_width, box_height, box_area))
+        if len(clean_contours) >= 12:
+            break
+    source_contours = clean_contours
+    print("Clean geometric contours:", len(source_contours))
+
     extraction_1 = _draw_simplified_contours(
-        source_contours, height, width, epsilon_ratio=0.012
+        source_contours, height, width, epsilon_ratio=0.075
     )
     extraction_2 = _draw_simplified_contours(
-        _find_external_contours(extraction_1),
-        height,
-        width,
-        epsilon_ratio=0.025,
+        source_contours, height, width, epsilon_ratio=0.045
     )
     extraction_3 = _draw_simplified_contours(
-        _find_external_contours(extraction_2),
-        height,
-        width,
-        epsilon_ratio=0.045,
+        source_contours, height, width, epsilon_ratio=0.018
     )
     geometric_output = _draw_specific_shapes(
-        _find_external_contours(extraction_3), height, width
+        source_contours, height, width
     )
 
     output_path = Path(output_path)
@@ -184,6 +211,20 @@ def generate_geometric(
     _save_rgb(steps_directory / "04_specific_shapes.png", geometric_output)
     _save_rgb(output_path, geometric_output)
 
+    step_paths = [
+        str(steps_directory / "01_extraction.png"),
+        str(steps_directory / "02_extraction.png"),
+        str(steps_directory / "03_extraction.png"),
+        str(steps_directory / "04_specific_shapes.png"),
+    ]
+
+    for step_path in step_paths:
+        saved_image = cv2.imread(step_path)
+        if saved_image is None or saved_image.size == 0:
+            raise RuntimeError(f"Invalid geometric step image: {step_path}")
+
+        print("[Stage 1] Geometric step saved:", step_path)
+
     print("[Stage 1] Geometric output saved:", output_path)
     return {
         "working_image": working_image,
@@ -193,5 +234,6 @@ def generate_geometric(
         "extraction_stages": [extraction_1, extraction_2, extraction_3],
         "specific_shapes_output": geometric_output,
         "steps_directory": str(steps_directory),
+        "step_paths": step_paths,
         "output_path": str(output_path),
     }
