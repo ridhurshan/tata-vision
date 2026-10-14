@@ -615,7 +615,7 @@ const handleDownload = async () => {
     ['Specific Geometric Shapes', '04_specific_shapes.png'],
   ].map(([title, filename]) => ({
     title,
-    image: BACKEND_URL + '/outputs/' + projectId + '/geometric_steps/' + filename + '?v=3',
+    image: BACKEND_URL + '/outputs/' + projectId + '/geometric_steps/' + filename + '?v=4',
   }));
 
   const curvePreviews = [
@@ -696,7 +696,7 @@ const handleDownload = async () => {
           name: 'Geometric Shape Extraction',
           description: 'Basic geometric structure extracted from the reference image.',
           image: project.geometric_image
-              ? `${BACKEND_URL}${project.geometric_image}?v=3`
+              ? `${BACKEND_URL}${project.geometric_image}?v=4`
               : null,
       },
 
