@@ -9,7 +9,7 @@ import Footer from '../common/Footer';
 import { useAuth } from '../context/AuthContext';
 import { getProjectsByUser } from '../services/projectService';
 
-const BACKEND_URL = 'http://localhost:5000';
+const BACKEND_URL = 'http://localhost:5002';
 
 const Dashboard = () => {
   const navigate = useNavigate();
@@ -170,8 +170,8 @@ const Dashboard = () => {
                     <span className="demo-number">2</span>
 
                     <div>
-                      <strong>Basic Shapes</strong>
-                      <small>Structure guidance</small>
+                      <strong>Subject analysis</strong>
+                      <small>People, faces & objects</small>
                     </div>
 
                     <span className="demo-check">✓</span>
@@ -592,12 +592,12 @@ const Dashboard = () => {
                 </div>
 
                 <h3>
-                  Basic Shapes
+                  Subject Analysis
                 </h3>
 
                 <p>
-                  AI identifies simple shapes and
-                  structures inside your image.
+                  AI separates people, faces, animals and
+                  objects so every subject gets its own guide.
                 </p>
 
               </div>
@@ -632,8 +632,8 @@ const Dashboard = () => {
                 </h3>
 
                 <p>
-                  Refine basic shapes into detailed
-                  outlines and curves.
+                  Follow the main contour and important
+                  details with progressive curve steps.
                 </p>
 
               </div>
