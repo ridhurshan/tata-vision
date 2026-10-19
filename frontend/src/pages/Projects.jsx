@@ -8,7 +8,7 @@ import Navbar from '../common/Navbar';
 import Footer from '../common/Footer';
 
 const Projects = () => {
-  const BACKEND_URL = 'http://localhost:5000';
+  const BACKEND_URL = 'http://localhost:5002';
   const { user, loading: authLoading } = useAuth();
   const [projects, setProjects] = useState([]);
   const [loading, setLoading] = useState(true);

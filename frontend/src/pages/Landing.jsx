@@ -75,8 +75,8 @@ const Landing = () => {
             </h1>
 
             <p className="hero-description">
-              Upload a simple sketch and let our advanced AI transform it into beautiful 
-              production-ready artwork. Watch as the magic unfolds in real-time.
+              Upload a reference image and receive a calm, step-by-step drawing guide —
+              from subject analysis to curves, shading, and colour.
             </p>
 
             <div className="hero-actions">
@@ -96,18 +96,18 @@ const Landing = () => {
 
             <div className="hero-stats">
               <div className="stat-item">
-                <span className="stat-number">10K+</span>
-                <span className="stat-label">Artworks Created</span>
+                <span className="stat-number">01</span>
+                <span className="stat-label">Reference image</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
-                <span className="stat-number">4.9★</span>
-                <span className="stat-label">User Rating</span>
+                <span className="stat-number">04</span>
+                <span className="stat-label">Drawing stages</span>
               </div>
               <div className="stat-divider"></div>
               <div className="stat-item">
-                <span className="stat-number">2M+</span>
-                <span className="stat-label">Sketches Uploaded</span>
+                <span className="stat-number">∞</span>
+                <span className="stat-label">Ways to practise</span>
               </div>
             </div>
           </div>
@@ -168,22 +168,22 @@ const Landing = () => {
             <div className="feature-card">
               <div className="feature-icon">🎨</div>
               <h3>AI-Powered Art</h3>
-              <p>Advanced algorithms transform your sketches into stunning masterpieces</p>
+              <p>Turn one reference into clear, reusable drawing guidance.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">⚡</div>
-              <h3>Real-Time Processing</h3>
-              <p>Watch your artwork come to life instantly with our fast AI engine</p>
+              <h3>Subject-aware steps</h3>
+              <p>Open a person, face, animal, or object and practise it on its own.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">🖼️</div>
-              <h3>Multiple Styles</h3>
-              <p>Choose from various art styles to match your creative vision</p>
+              <h3>Progressive detail</h3>
+              <p>Move from curves to shading and colour without losing the structure.</p>
             </div>
             <div className="feature-card">
               <div className="feature-icon">💾</div>
-              <h3>Save & Export</h3>
-              <p>Download your creations in high quality for any use case</p>
+              <h3>Save & revisit</h3>
+              <p>Keep each finished guide in your project library for later practice.</p>
             </div>
           </div>
         </div>

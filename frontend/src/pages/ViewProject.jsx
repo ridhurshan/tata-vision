@@ -9,14 +9,39 @@ import Navbar from '../common/Navbar';
 
 import { jsPDF } from 'jspdf';
 
-const SHADING_PREVIEW_COUNT = 10;
-const COLOURING_PREVIEW_COUNT = 7;
+const SHADING_PREVIEW_COUNT = 8;
+const COLOURING_PREVIEW_COUNT = 8;
+
+const getVisibleDetectionPipelines = (detection) =>
+  (detection?.pipelines || []).filter((pipeline) => pipeline.type !== 'shapes');
+
+const getVisibleSubjectSteps = (stageType, steps = []) => {
+  if (stageType === 'shading') {
+    return steps.filter((step) => {
+      const image = String(step?.image || '');
+      return !image.includes('/04_quantized_shading.png') &&
+        !image.includes('/05_stage_1.png');
+    });
+  }
+
+  if (stageType === 'colouring') {
+    const finalSketchSteps = steps.filter((step) =>
+      String(step?.image || '').includes('/04_final_coloured_sketch.png')
+    );
+    const otherSteps = steps.filter((step) =>
+      !String(step?.image || '').includes('/04_final_coloured_sketch.png')
+    );
+    return [...otherSteps, ...finalSketchSteps];
+  }
+
+  return steps;
+};
 
 const ViewProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
 
-    const BACKEND_URL = 'http://localhost:5000';
+    const BACKEND_URL = 'http://localhost:5002';
 
   const [project, setProject] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -26,10 +51,14 @@ const ViewProject = () => {
 
   // Stores the image selected for the enlarged preview
   const [selectedStage, setSelectedStage] = useState(null);
-  const [selectedGeometricStep, setSelectedGeometricStep] = useState(null);
   const [selectedCurveStep, setSelectedCurveStep] = useState(null);
   const [selectedShadingIndex, setSelectedShadingIndex] = useState(0);
   const [selectedColouringIndex, setSelectedColouringIndex] = useState(0);
+  const [detectedObjects, setDetectedObjects] = useState([]);
+  const [detectionAnalysisImage, setDetectionAnalysisImage] = useState(null);
+  const [selectedDetection, setSelectedDetection] = useState(null);
+  const [selectedDetectionStep, setSelectedDetectionStep] = useState(null);
+  const [selectedDetectionCrop, setSelectedDetectionCrop] = useState(null);
 
   // Fetch project details
   useEffect(() => {
@@ -68,40 +97,106 @@ const ViewProject = () => {
     fetchProject();
   }, [projectId]);
 
+  useEffect(() => {
+    if (!project || !['Waiting', 'Processing'].includes(project.status)) {
+      return undefined;
+    }
+
+    let active = true;
+    const refreshProject = async () => {
+      try {
+        const response = await getProject(projectId);
+        if (active) {
+          setProject(response.data);
+        }
+      } catch (refreshError) {
+        console.warn('Could not refresh project status:', refreshError);
+      }
+    };
+
+    const intervalId = window.setInterval(refreshProject, 5000);
+    return () => {
+      active = false;
+      window.clearInterval(intervalId);
+    };
+  }, [projectId, project?.status]);
+
+  useEffect(() => {
+    const fetchDetections = async () => {
+      try {
+        const response = await fetch(
+          `${BACKEND_URL}/outputs/${projectId}/tata_vision_geometry/detections.json?v=${Date.now()}`,
+          { cache: 'no-store' }
+        );
+
+        if (!response.ok) {
+          setDetectedObjects([]);
+          setDetectionAnalysisImage(null);
+          return;
+        }
+
+        const data = await response.json();
+        const detections = Array.isArray(data.detections) ? data.detections : [];
+        setDetectedObjects(detections);
+        setSelectedDetection((current) => {
+          if (!current) return null;
+          return detections.find((detection) => detection.id === current.id) || current;
+        });
+        setDetectionAnalysisImage(data.analysis_image || null);
+      } catch (detectionError) {
+        console.warn('Detected-object metadata is not available:', detectionError);
+        setDetectedObjects([]);
+        setDetectionAnalysisImage(null);
+      }
+    };
+
+    fetchDetections();
+
+    const shouldPoll =
+      !project || ['Waiting', 'Processing'].includes(project.status);
+    if (!shouldPoll) {
+      return undefined;
+    }
+
+    const intervalId = window.setInterval(fetchDetections, 5000);
+    return () => window.clearInterval(intervalId);
+  }, [projectId, project?.status]);
+
   // Close lightbox using Escape key
   // Also prevent page scrolling while the lightbox is open
   useEffect(() => {
     const handleKeyDown = (event) => {
       if (event.key === 'Escape') {
         setSelectedStage(null);
+        setSelectedDetectionCrop(null);
       }
 
-      if (selectedStage?.id === 3 && event.key === 'ArrowLeft') {
+      if (selectedStage?.id === 2 && event.key === 'ArrowLeft') {
         setSelectedShadingIndex((current) =>
           (current - 1 + SHADING_PREVIEW_COUNT) % SHADING_PREVIEW_COUNT
         );
       }
 
-      if (selectedStage?.id === 3 && event.key === 'ArrowRight') {
+      if (selectedStage?.id === 2 && event.key === 'ArrowRight') {
         setSelectedShadingIndex((current) =>
           (current + 1) % SHADING_PREVIEW_COUNT
         );
       }
 
-      if (selectedStage?.id === 4 && event.key === 'ArrowLeft') {
+      if (selectedStage?.id === 3 && event.key === 'ArrowLeft') {
         setSelectedColouringIndex((current) =>
           (current - 1 + COLOURING_PREVIEW_COUNT) % COLOURING_PREVIEW_COUNT
         );
       }
 
-      if (selectedStage?.id === 4 && event.key === 'ArrowRight') {
+      if (selectedStage?.id === 3 && event.key === 'ArrowRight') {
         setSelectedColouringIndex((current) =>
           (current + 1) % COLOURING_PREVIEW_COUNT
         );
       }
     };
 
-    if (selectedStage) {
+    if (selectedStage || selectedDetectionCrop) {
       document.addEventListener('keydown', handleKeyDown);
       document.body.style.overflow = 'hidden';
     }
@@ -110,7 +205,26 @@ const ViewProject = () => {
       document.removeEventListener('keydown', handleKeyDown);
       document.body.style.overflow = '';
     };
-  }, [selectedStage]);
+  }, [selectedStage, selectedDetectionCrop]);
+
+  useEffect(() => {
+    if (!selectedDetection) {
+      setSelectedDetectionStep(null);
+      return;
+    }
+
+    const firstPipeline = getVisibleDetectionPipelines(selectedDetection)[0];
+    const firstStep = firstPipeline?.steps?.[0];
+    setSelectedDetectionStep(
+      firstStep
+        ? {
+            ...firstStep,
+            pipelineType: firstPipeline.type,
+            pipelineTitle: firstPipeline.title,
+          }
+        : null
+    );
+  }, [selectedDetection]);
 
   const formatDate = (dateString) => {
     if (!dateString) {
@@ -158,7 +272,7 @@ const handleDownload = async () => {
 
     const stages = [
       {
-        title: '1. Geometric Shape Extraction',
+        title: '1. Image Analysis',
         image: project.geometric_image
           ? `${BACKEND_URL}${project.geometric_image}`
           : null
@@ -391,7 +505,7 @@ const handleDownload = async () => {
 
         const stages = [
           {
-            filename: '01_geometric_shape_extraction.png',
+            filename: '01_image_analysis.png',
             url: project.geometric_image
               ? `${BACKEND_URL}${project.geometric_image}`
               : null,
@@ -552,15 +666,12 @@ const handleDownload = async () => {
 
     setActiveStage(stage.id);
     if (stage.id === 1) {
-      setSelectedGeometricStep(null);
-    }
-    if (stage.id === 2) {
       setSelectedCurveStep(null);
     }
-    if (stage.id === 3) {
+    if (stage.id === 2) {
       setSelectedShadingIndex(0);
     }
-    if (stage.id === 4) {
+    if (stage.id === 3) {
       setSelectedColouringIndex(0);
     }
     setSelectedStage(stage);
@@ -597,7 +708,7 @@ const handleDownload = async () => {
           : 10;
 
       const processingStages = [
-          { id: 1, name: 'Geometric Shapes' },
+          { id: 1, name: 'Image Analysis' },
           { id: 2, name: 'Curves' },
           { id: 3, name: 'Shading' },
           { id: 4, name: 'Colouring Guide' },
@@ -606,17 +717,7 @@ const handleDownload = async () => {
   // Temporary images until real AI output is connected.
   // These URLs use larger images so they do not become too blurry
   // when shown inside the enlarged preview.
- //const BACKEND_URL = 'http://localhost:5000';
-
-  const geometricPreviews = [
-    ['Extraction 1', '01_extraction.png'],
-    ['Extraction 2', '02_extraction.png'],
-    ['Extraction 3', '03_extraction.png'],
-    ['Specific Geometric Shapes', '04_specific_shapes.png'],
-  ].map(([title, filename]) => ({
-    title,
-    image: BACKEND_URL + '/outputs/' + projectId + '/geometric_steps/' + filename + '?v=4',
-  }));
+ //const BACKEND_URL = 'http://localhost:5002';
 
   const curvePreviews = [
     ['Main Structure', 'curve_step1_main.png'],
@@ -633,8 +734,6 @@ const handleDownload = async () => {
       ['Luminance Baseline', '01_luminance.png'],
       ['Relative Depth', '02_relative_depth.png'],
       ['Fused Shading', '03_fused_shading.png'],
-      ['6-Level Shading', '04_quantized_shading.png'],
-      ['Shading Stage 1', '05_stage_1.png'],
       ['Shading Stage 2', '05_stage_2.png'],
       ['Shading Stage 3', '05_stage_3.png'],
       ['Shading Stage 4', '05_stage_4.png'],
@@ -671,6 +770,7 @@ const handleDownload = async () => {
         ['Colour Stage 4', '05_colour_stage_4.png'],
         ['Colour Stage 5', '05_colour_stage_5.png'],
         ['Realistic Painted Result', '06_realistic_paprika_painting.png'],
+        ['Final Coloured Sketch', '04_final_coloured_sketch.png'],
       ].map(([title, filename]) => ({
         title,
         image: BACKEND_URL + '/outputs/' + projectId + '/colouring_steps/' + filename,
@@ -693,40 +793,44 @@ const handleDownload = async () => {
   const drawingStages = [
       {
           id: 1,
-          name: 'Geometric Shape Extraction',
-          description: 'Basic geometric structure extracted from the reference image.',
-          image: project.geometric_image
-              ? `${BACKEND_URL}${project.geometric_image}?v=4`
-              : null,
+          name: 'Curve Extraction',
+          description: 'Refined curves and contour lines extracted from the image.',
+          image: `${BACKEND_URL}${project.curve_image || `/outputs/${projectId}/curves.png`}?v=2`,
       },
 
       {
           id: 2,
-          name: 'Curve Extraction',
-          description: 'Refined curves and contour lines extracted from the image.',
-          image: project.curve_image
-              ? `${BACKEND_URL}${project.curve_image}?v=2`
-              : null,
+          name: 'Pencil Shading',
+          description: 'Pencil shading generated using reference-image light and shadow.',
+          image: `${BACKEND_URL}${project.shading_image || `/outputs/${projectId}/shading.png`}?v=2`,
       },
 
       {
           id: 3,
-          name: 'Pencil Shading',
-          description: 'Pencil shading generated using reference-image light and shadow.',
-          image: project.shading_image
-              ? `${BACKEND_URL}${project.shading_image}`
-              : null,
-      },
-
-      {
-          id: 4,
           name: 'Number & Colour Guide',
           description: 'Paint-by-number guide with corresponding reference colours.',
-          image: project.colouring_image
-              ? `${BACKEND_URL}${project.colouring_image}`
-              : null,
+          image: `${BACKEND_URL}${project.colouring_image || `/outputs/${projectId}/colouring.png`}?v=2`,
       },
   ];
+
+  const getDetectionImageUrl = (detection) =>
+    `${BACKEND_URL}/outputs/${projectId}/tata_vision_geometry/${detection.image}?v=1`;
+
+  const getDetectionStepUrl = (step) =>
+    `${BACKEND_URL}/outputs/${projectId}/tata_vision_geometry/${step.image}?v=1`;
+
+  const getDetectionPipelineLabel = (type) => {
+    if (type === 'body') return 'Human body steps';
+    if (type === 'face') return 'Human face steps';
+    if (type === 'curves') return 'Curves steps';
+    if (type === 'shading') return 'Shading steps';
+    if (type === 'colouring') return 'Colouring steps';
+    return 'Object construction steps';
+  };
+
+  const detectionOverviewUrl = detectionAnalysisImage
+    ? `${BACKEND_URL}/outputs/${projectId}/tata_vision_geometry/${detectionAnalysisImage}?v=1`
+    : null;
 
   return (
     <>
@@ -812,82 +916,164 @@ const handleDownload = async () => {
             </div>
           </section>
 
-          {/* Drawing Stages */}
-          <section className="section-block">
-            <h3 className="section-title">Final Output</h3>
-
-            <div className="drawing-stages-card">
-              <div className="drawing-stages-header">
-                DRAWING STAGES (PREVIEW)
+          {detectedObjects.length > 0 && (
+            <section className="section-block detected-objects-section">
+              <div className="detected-objects-heading">
+                <div>
+                  <h3 className="section-title">Detected Objects</h3>
+                  <p className="detected-objects-description">
+                    Analysis found {detectedObjects.length} object{detectedObjects.length === 1 ? '' : 's'}. Click one to view it separately.
+                  </p>
+                </div>
+                {detectionOverviewUrl && (
+                  <img
+                    src={detectionOverviewUrl}
+                    alt="Detected objects marked in the uploaded image"
+                    className="detection-overview-image"
+                    loading="lazy"
+                  />
+                )}
               </div>
 
-              <div className="drawing-stages-grid">
-                {drawingStages.map((stage) => (
+              <div className="detected-objects-grid">
+                {detectedObjects.map((detection) => (
                   <button
                     type="button"
-                    key={stage.id}
-                    className={`drawing-stage-cell ${
-                      activeStage === stage.id ? 'active' : ''
-                    }`}
-                    onClick={() => handleStageClick(stage)}
-                    aria-label={`Open enlarged preview of ${stage.name}`}
+                    className="detected-object-card"
+                    key={`${detection.id}-${detection.image}`}
+                    onClick={() => setSelectedDetection(detection)}
+                    aria-label={`Open detected ${detection.label}`}
                   >
-                    <div className="drawing-stage-image-wrapper">
-
-                        {stage.image ? (
-
-                            <img
-                                src={stage.image}
-                                alt={stage.name}
-                                loading="lazy"
-                            />
-
-                        ) : (
-
-                            <div className="stage-image-placeholder">
-
-                                <div className="stage-placeholder-spinner"></div>
-
-                                <span>
-                                    Output not generated yet
-                                </span>
-
-                            </div>
-
-                        )}
-
-                        {stage.image && (
-                            <div className="drawing-stage-hover-overlay">
-
-                                <svg
-                                    width="38"
-                                    height="38"
-                                    viewBox="0 0 24 24"
-                                    fill="none"
-                                    stroke="currentColor"
-                                    strokeWidth="1.7"
-                                    aria-hidden="true"
-                                >
-                                    <circle cx="11" cy="11" r="8" />
-                                    <path d="M21 21l-4.35-4.35" />
-                                    <path d="M11 8v6M8 11h6" />
-                                </svg>
-
-                                <span>View image</span>
-
-                            </div>
-                        )}
-
-                    </div>
-
-                    <div className="drawing-stage-caption">
-                      {stage.name.toUpperCase()}
-                    </div>
+                    <img
+                      src={getDetectionImageUrl(detection)}
+                      alt={`Detected ${detection.label}`}
+                      loading="lazy"
+                    />
+                    <span className="detected-object-card-title">
+                      {detection.label} {detection.category === 'human' ? detection.id : ''}
+                    </span>
+                    <span className="detected-object-card-meta">
+                      {detection.category} · {Math.round(detection.confidence * 100)}% confidence
+                    </span>
                   </button>
                 ))}
               </div>
-            </div>
-          </section>
+
+              {selectedDetection && (
+                <div className="selected-detection-steps">
+                  <div className="selected-detection-heading">
+                    <div>
+                      <h4>
+                        {selectedDetection.label} {selectedDetection.category === 'human' ? selectedDetection.id : ''} — drawing steps
+                      </h4>
+                      <p>
+                        Only this detected subject's pipeline is shown below.
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      className="view-detection-crop-button"
+                      onClick={() => setSelectedDetectionCrop(selectedDetection)}
+                    >
+                      View isolated crop
+                    </button>
+                  </div>
+
+                  {getVisibleDetectionPipelines(selectedDetection).length > 0 ? (
+                    getVisibleDetectionPipelines(selectedDetection).map((pipeline) => (
+                      <div className="detection-pipeline-group" key={`${selectedDetection.id}-${pipeline.type}`}>
+                        <h5>{getDetectionPipelineLabel(pipeline.type)}</h5>
+                        <div className="detection-steps-grid">
+                          {pipeline.steps.map((step) => {
+                            const stepSelectionKey = `${pipeline.type}-${step.image}`;
+                            const selectedKey = selectedDetectionStep
+                              ? `${selectedDetectionStep.pipelineType}-${selectedDetectionStep.image}`
+                              : '';
+
+                            return (
+                              <button
+                                type="button"
+                                className={`detection-step-card ${selectedKey === stepSelectionKey ? 'active' : ''}`}
+                                key={stepSelectionKey}
+                                onClick={() => setSelectedDetectionStep({
+                                  ...step,
+                                  pipelineType: pipeline.type,
+                                  pipelineTitle: pipeline.title,
+                                })}
+                              >
+                                <img
+                                  src={getDetectionStepUrl(step)}
+                                  alt={`${selectedDetection.label} ${step.title}`}
+                                  loading="lazy"
+                                />
+                                <span>{step.title}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    ))
+                  ) : (
+                    <p className="detection-steps-empty">
+                      Subject-specific drawing steps are not available yet. The analysis may still be processing.
+                    </p>
+                  )}
+
+                  {['curves', 'shading', 'colouring'].map((stageType) => {
+                    const stageOutput = selectedDetection.subject_outputs?.[stageType];
+                    if (!stageOutput) return null;
+
+                    return (
+                      <div className="detection-pipeline-group" key={`${selectedDetection.id}-${stageType}`}>
+                        <h5>{getDetectionPipelineLabel(stageType)}</h5>
+                        <div className="detection-steps-grid">
+                          {getVisibleSubjectSteps(stageType, stageOutput.steps).map((step) => {
+                            const stepSelectionKey = `${stageType}-${step.image}`;
+                            const selectedKey = selectedDetectionStep
+                              ? `${selectedDetectionStep.pipelineType}-${selectedDetectionStep.image}`
+                              : '';
+
+                            return (
+                              <button
+                                type="button"
+                                className={`detection-step-card ${selectedKey === stepSelectionKey ? 'active' : ''}`}
+                                key={stepSelectionKey}
+                                onClick={() => setSelectedDetectionStep({
+                                  ...step,
+                                  pipelineType: stageType,
+                                  pipelineTitle: getDetectionPipelineLabel(stageType),
+                                })}
+                              >
+                                <img
+                                  src={getDetectionStepUrl(step)}
+                                  alt={`${selectedDetection.label} ${step.title}`}
+                                  loading="lazy"
+                                />
+                                <span>{step.title}</span>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    );
+                  })}
+
+                  {selectedDetectionStep && (
+                    <div className="selected-detection-step-preview">
+                      <img
+                        src={getDetectionStepUrl(selectedDetectionStep)}
+                        alt={`${selectedDetection.label} ${selectedDetectionStep.title}`}
+                      />
+                      <div>
+                        <strong>{selectedDetectionStep.title}</strong>
+                        <span>{selectedDetectionStep.pipelineTitle}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </section>
+          )}
 
           {/* Final Artwork Bar */}
           {project.status === 'Completed' && (
@@ -953,36 +1139,6 @@ const handleDownload = async () => {
             </button>
 
             {selectedStage.id === 1 ? (
-              <div className="shading-gallery static-steps-gallery geometric-gallery">
-                <div className="shading-main-preview">
-                  <img
-                    src={selectedGeometricStep?.image || selectedStage.image}
-                    alt={selectedGeometricStep?.title || selectedStage.name}
-                    className="shading-main-image"
-                  />
-                  <div className="shading-main-label">
-                    <strong>{selectedGeometricStep?.title || selectedStage.name}</strong>
-                    <span>{selectedGeometricStep ? 'Geometric step' : 'Main result'}</span>
-                  </div>
-                </div>
-
-                <div className="shading-preview-grid" aria-label="Geometric extraction stages">
-                  {geometricPreviews.map((preview) => (
-                    <button
-                      type="button"
-                      className={'shading-preview-card ' + (selectedGeometricStep?.image === preview.image ? 'active' : '')}
-                      key={preview.image}
-                      onClick={() => setSelectedGeometricStep(preview)}
-                      aria-label={'Show ' + preview.title}
-                      aria-pressed={selectedGeometricStep?.image === preview.image}
-                    >
-                      <img src={preview.image} alt={preview.title} loading="lazy" />
-                      <span>{preview.title}</span>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            ) : selectedStage.id === 2 ? (
               <div className="shading-gallery static-steps-gallery curve-gallery">
                 <div className="shading-main-preview">
                   <img
@@ -1012,7 +1168,7 @@ const handleDownload = async () => {
                   ))}
                 </div>
               </div>
-            ) : selectedStage.id === 3 ? (
+            ) : selectedStage.id === 2 ? (
               <div className="shading-gallery">
                 <div className="shading-main-preview">
                   <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousShading} aria-label="Show previous shading image">
@@ -1037,7 +1193,7 @@ const handleDownload = async () => {
                   ))}
                 </div>
               </div>
-            ) : selectedStage.id === 4 ? (
+            ) : selectedStage.id === 3 ? (
               <div className="shading-gallery colouring-gallery">
                 <div className="shading-main-preview">
                   <button type="button" className="shading-gallery-arrow shading-gallery-arrow-previous" onClick={showPreviousColouring} aria-label="Show previous colouring image">
@@ -1090,6 +1246,46 @@ const handleDownload = async () => {
               >
                 Close Preview
               </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {selectedDetectionCrop && (
+        <div
+          className="image-lightbox detection-lightbox"
+          role="dialog"
+          aria-modal="true"
+          aria-label={`Detected ${selectedDetectionCrop.label} enlarged preview`}
+          onClick={() => setSelectedDetectionCrop(null)}
+        >
+          <div
+            className="image-lightbox-content detection-lightbox-content"
+            onClick={(event) => event.stopPropagation()}
+          >
+            <button
+              type="button"
+              className="image-lightbox-close"
+              onClick={() => setSelectedDetectionCrop(null)}
+              aria-label="Close detected object preview"
+            >
+              &times;
+            </button>
+
+            <div className="detected-object-popup">
+              <img
+                src={getDetectionImageUrl(selectedDetectionCrop)}
+                alt={`Detected ${selectedDetectionCrop.label}`}
+                className="detected-object-popup-image"
+              />
+              <div className="detected-object-popup-caption">
+                <strong>
+                  {selectedDetectionCrop.label} {selectedDetectionCrop.category === 'human' ? selectedDetectionCrop.id : ''}
+                </strong>
+                <span>
+                  {selectedDetectionCrop.category} · {Math.round(selectedDetectionCrop.confidence * 100)}% confidence
+                </span>
+              </div>
             </div>
           </div>
         </div>
