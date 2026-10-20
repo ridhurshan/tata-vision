@@ -233,7 +233,7 @@ def to_lab_float(rgb):
 # ════════════════════════════════════════════════════════════════════════════
 #  1. LOAD SAM
 # ════════════════════════════════════════════════════════════════════════════
-SAM_URLS = {"vit_h": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+SAM_URLS = {"vit_h": "/models/sam_vit_h_4b8939.pth",
             "vit_l": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
             "vit_b": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"}
 
@@ -336,14 +336,21 @@ def _resolve_checkpoint(cfg, checkpoint, model_type):
                 log(f"checkpoint name says {mt}, overriding model_type={model_type}")
                 model_type = mt
         return p, model_type
-    p = Path(cfg.sam_checkpoint_dir) / SAM_URLS[model_type].split("/")[-1]
+    source = SAM_URLS[model_type]
+    source_path = Path(source).expanduser()
+    if source_path.is_file():
+        return source_path.resolve(), model_type
+    if not source.startswith(("http://", "https://")):
+        log(f"SAM checkpoint not found: {source_path}")
+        return None, model_type
+    p = Path(cfg.sam_checkpoint_dir) / source.split("/")[-1]
     if p.is_file():
         return p, model_type
     if cfg.sam_auto_download:
         p.parent.mkdir(parents=True, exist_ok=True)
         log(f"downloading SAM {model_type} checkpoint (one time) ...")
         try:
-            urllib.request.urlretrieve(SAM_URLS[model_type], p)
+            urllib.request.urlretrieve(source, p)
             return p, model_type
         except Exception as e:
             log("download failed ->", e)

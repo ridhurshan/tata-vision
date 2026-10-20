@@ -1445,7 +1445,7 @@ def split_by_color(m, rgb, K=3, min_frac=0.08):
 # ───────────────────────── 9a. SAM segmentation ─────────────────────────
 import urllib.request, zipfile
 
-SAM_URLS = {"vit_h": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+SAM_URLS = {"vit_h": "/models/sam_vit_h_4b8939.pth",
             "vit_l": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
             "vit_b": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"}
 SAM_MIN_BYTES = {"vit_h": 2.4e9, "vit_l": 1.2e9, "vit_b": 3.6e8}      # a complete file is never smaller than this
@@ -1468,8 +1468,15 @@ def ensure_sam_checkpoint():
             raise FileNotFoundError(f"SAM checkpoint not found: {checkpoint}")
         return checkpoint
 
+    source = SAM_URLS[SAM_MODEL_TYPE]
+    source_path = Path(source).expanduser()
+    if source_path.is_file():
+        return source_path.resolve()
+    if not source.startswith(("http://", "https://")):
+        raise FileNotFoundError(f"SAM checkpoint not found: {source_path}")
+
     SAM_CHECKPOINT_DIR.mkdir(exist_ok=True)
-    url = SAM_URLS[SAM_MODEL_TYPE]
+    url = source
     ckpt = SAM_CHECKPOINT_DIR / url.split("/")[-1]
     if _sam_ckpt_ok(ckpt):
         return ckpt
