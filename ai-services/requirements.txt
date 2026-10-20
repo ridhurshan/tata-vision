@@ -1,16 +1,17 @@
 Flask>=3.1,<4
+face-alignment>=1.4,<2
 flask-cors>=6,<7
 gunicorn>=23,<24
+matplotlib>=3.9,<4
 numpy>=1.26,<3
 onnxruntime>=1.20,<2
 opencv-python-headless>=4.10,<5
 Pillow>=10,<13
+requests>=2.32,<3
+scikit-image>=0.24,<1
+scipy>=1.14,<2
 segment-anything @ git+https://github.com/facebookresearch/segment-anything.git@6fdee8f2727f4506cfbbe553e23b895e27956588
 torch>=2.4,<3
 torchvision>=0.19,<1
 transformers>=4.46,<5
-opencv-python
-onnxruntime
-scipy
-scikit-image
-matplotlib
+ultralytics>=8.3,<9

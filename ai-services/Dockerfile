@@ -13,10 +13,11 @@ WORKDIR /app/ai-services
 
 COPY ai-services/requirements.txt ./requirements.txt
 RUN pip install --index-url https://download.pytorch.org/whl/cpu torch torchvision \
-    && pip install -r requirements.txt
+    && pip install -r requirements.txt \
+    && python -c "import face_alignment, ultralytics"
 
 COPY ai-services/ ./
 
 EXPOSE 5001
 
-CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "2", "--timeout", "900", "app:app"]
+CMD ["gunicorn", "--bind", "0.0.0.0:5001", "--workers", "1", "--threads", "2", "--timeout", "3600", "app:app"]

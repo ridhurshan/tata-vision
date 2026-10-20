@@ -6,6 +6,7 @@ from colorizer import colorize_if_needed
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 from PIL import Image, UnidentifiedImageError
+from threading import Lock
 
 import json
 import os
@@ -28,6 +29,35 @@ app.config.update(
 )
 
 CORS(app)
+
+# SAM ViT-H is large enough that parallel jobs can exhaust an 8 GB instance.
+# Keep one worker thread available for health checks and reject overlapping
+# processing requests instead of loading multiple copies of the model.
+PROCESS_LOCK = Lock()
+PROCESS_LOCK_ENV_KEY = "tata_vision.process_lock_acquired"
+
+
+@app.before_request
+def limit_parallel_processing():
+    if request.path != "/process":
+        return None
+
+    if not PROCESS_LOCK.acquire(blocking=False):
+        response = jsonify({
+            "message": "The AI service is already processing another image. Please retry shortly."
+        })
+        response.status_code = 429
+        response.headers["Retry-After"] = "30"
+        return response
+
+    request.environ[PROCESS_LOCK_ENV_KEY] = True
+    return None
+
+
+@app.teardown_request
+def release_processing_lock(_error):
+    if request.environ.pop(PROCESS_LOCK_ENV_KEY, False):
+        PROCESS_LOCK.release()
 
 
 # ============================================================
