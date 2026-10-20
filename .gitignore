@@ -16,6 +16,9 @@ node_modules/
 .env
 .env.production
 .DS_Store
+.idea/
+/img.png
+/img_1.png
 __pycache__/
 *.py[cod]
 ai-services/models/sam_vit_h_4b8939.pth

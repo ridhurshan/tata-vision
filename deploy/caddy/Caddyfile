@@ -1,0 +1,4 @@
+tatavision.io, www.tatavision.io {
+	encode zstd gzip
+	reverse_proxy tata-vision:80
+}

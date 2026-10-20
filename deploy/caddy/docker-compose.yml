@@ -1,0 +1,25 @@
+name: paas
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - paas
+
+volumes:
+  caddy_data:
+  caddy_config:
+
+networks:
+  paas:
+    external: true
+    name: paas_paas
