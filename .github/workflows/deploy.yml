@@ -1,0 +1,204 @@
+name: Build & Deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      image_tag:
+        description: "Existing commit SHA tag to deploy (rollback). Empty = build HEAD."
+        required: false
+        type: string
+
+concurrency:
+  group: deploy-tata-vision
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_PREFIX: ghcr.io/${{ github.repository_owner }}/tata-vision
+  AWS_DEFAULT_REGION: ap-south-1
+
+jobs:
+  build:
+    name: Build ${{ matrix.component }}
+    runs-on: ubuntu-24.04-arm
+    if: ${{ !inputs.image_tag }}
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - component: frontend
+            context: ./frontend
+            dockerfile: ./frontend/Dockerfile
+          - component: backend
+            context: ./backend
+            dockerfile: ./backend/Dockerfile
+          - component: ai-service
+            context: .
+            dockerfile: ./ai-services/Dockerfile
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: docker/setup-buildx-action@v3
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push ${{ matrix.component }}
+        uses: docker/build-push-action@v6
+        with:
+          context: ${{ matrix.context }}
+          file: ${{ matrix.dockerfile }}
+          push: true
+          platforms: linux/arm64
+          tags: |
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:${{ github.sha }}
+            ${{ env.IMAGE_PREFIX }}-${{ matrix.component }}:latest
+          cache-from: type=gha,scope=${{ matrix.component }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.component }}
+
+  deploy:
+    name: Deploy to EC2
+    runs-on: ubuntu-24.04-arm
+    needs: [build]
+    if: ${{ always() && (needs.build.result == 'success' || needs.build.result == 'skipped') }}
+    permissions:
+      contents: read
+      packages: read
+    env:
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_DEPLOY_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_DEPLOY_KEY_SECRET }}
+      SG_ID: ${{ secrets.EC2_SECURITY_GROUP_ID || 'sg-09c36ce8067f2b51d' }}
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Resolve image tag
+        run: echo "IMAGE_TAG=${{ inputs.image_tag || github.sha }}" >> "$GITHUB_ENV"
+
+      - name: Open SSH for runner
+        run: |
+          set -euo pipefail
+          RUNNER_IP="$(curl -fsS https://checkip.amazonaws.com)"
+          echo "RUNNER_IP=$RUNNER_IP" >> "$GITHUB_ENV"
+          aws ec2 authorize-security-group-ingress \
+            --group-id "$SG_ID" \
+            --protocol tcp \
+            --port 22 \
+            --cidr "$RUNNER_IP/32" || true
+
+      - name: Upload production Compose manifest
+        uses: appleboy/scp-action@v1
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          source: docker-compose.prod.yml
+          target: /tmp/tata-vision-deploy
+          overwrite: true
+
+      - name: Deploy over SSH
+        uses: appleboy/ssh-action@v1
+        env:
+          DEPLOY_TAG: ${{ env.IMAGE_TAG }}
+          DEPLOY_IMAGE_PREFIX: ${{ env.IMAGE_PREFIX }}
+          GHCR_USER: ${{ github.actor }}
+          GHCR_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          host: ${{ secrets.EC2_HOST }}
+          username: ec2-user
+          key: ${{ secrets.EC2_SSH_KEY }}
+          envs: DEPLOY_TAG,DEPLOY_IMAGE_PREFIX,GHCR_USER,GHCR_TOKEN
+          script: |
+            set -euo pipefail
+
+            APP_DIR=/opt/paas/tata-vision
+            ENV_FILE="$APP_DIR/.env"
+            COMPOSE_FILE="$APP_DIR/docker-compose.yml"
+            MODEL_FILE=/opt/tata-vision/models/sam_vit_h_4b8939.pth
+
+            mkdir -p "$APP_DIR"
+            install -m 0644 \
+              /tmp/tata-vision-deploy/docker-compose.prod.yml \
+              "$COMPOSE_FILE"
+
+            if [ ! -f "$ENV_FILE" ]; then
+              echo "Missing $ENV_FILE. Create it from .env.production.example before the first deployment."
+              exit 1
+            fi
+
+            if [ ! -f "$MODEL_FILE" ]; then
+              echo "Missing SAM checkpoint: $MODEL_FILE"
+              exit 1
+            fi
+
+            TMP_ENV="$(mktemp)"
+            grep -vE '^(IMAGE_PREFIX|IMAGE_TAG)=' "$ENV_FILE" > "$TMP_ENV" || true
+            printf 'IMAGE_PREFIX=%s\nIMAGE_TAG=%s\n' \
+              "$DEPLOY_IMAGE_PREFIX" "$DEPLOY_TAG" >> "$TMP_ENV"
+            chmod 600 "$TMP_ENV"
+            mv "$TMP_ENV" "$ENV_FILE"
+
+            echo "$GHCR_TOKEN" | docker login ghcr.io \
+              -u "$GHCR_USER" --password-stdin
+
+            PAAS_NETWORK="$(sed -n 's/^PAAS_NETWORK=//p' "$ENV_FILE" | tail -1)"
+            PAAS_NETWORK="${PAAS_NETWORK:-paas_paas}"
+            if ! docker network inspect "$PAAS_NETWORK" >/dev/null 2>&1; then
+              echo "Shared Docker network not found: $PAAS_NETWORK"
+              docker network ls
+              exit 1
+            fi
+
+            cd "$APP_DIR"
+            docker compose --env-file "$ENV_FILE" pull
+            docker compose --env-file "$ENV_FILE" up -d --remove-orphans
+
+            APP_PORT="$(sed -n 's/^APP_PORT=//p' "$ENV_FILE" | tail -1)"
+            APP_PORT="${APP_PORT:-8090}"
+
+            for attempt in $(seq 1 30); do
+              if curl -fsS "http://127.0.0.1:$APP_PORT/api/health" >/dev/null; then
+                echo "Tata Vision is healthy."
+                break
+              fi
+
+              if [ "$attempt" -eq 30 ]; then
+                docker compose --env-file "$ENV_FILE" ps
+                docker compose --env-file "$ENV_FILE" logs --tail=100
+                echo "Deployment did not become healthy in time."
+                exit 1
+              fi
+
+              sleep 10
+            done
+
+            docker image prune -f
+            echo "Deployed Tata Vision: $DEPLOY_TAG"
+
+      - name: Record deployment
+        if: always()
+        run: |
+          curl -sf -X POST https://ops.dilax.space/api/hooks/deployment \
+            -H "Content-Type: application/json" \
+            -H "x-webhook-secret: ${{ secrets.WEBHOOK_SECRET }}" \
+            -d '{"app":"tata-vision","sha":"${{ env.IMAGE_TAG }}","status":"${{ job.status }}","actor":"${{ github.actor }}","runUrl":"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"}' || true
+
+      - name: Close SSH for runner
+        if: always()
+        run: |
+          if [ -n "${RUNNER_IP:-}" ]; then
+            aws ec2 revoke-security-group-ingress \
+              --group-id "$SG_ID" \
+              --protocol tcp \
+              --port 22 \
+              --cidr "$RUNNER_IP/32" || true
+          fi

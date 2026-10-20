@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_URL = 'http://localhost:5002/api/admin';
+const API_URL = `${import.meta.env.VITE_BACKEND_URL || ''}/api/admin`;
 
 const getAuthConfig = () => {
   const token = localStorage.getItem('token');

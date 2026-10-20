@@ -9,7 +9,7 @@ import Footer from '../common/Footer';
 import { useAuth } from '../context/AuthContext';
 import { getProjectsByUser } from '../services/projectService';
 
-const BACKEND_URL = 'http://localhost:5002';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
 const Dashboard = () => {
   const navigate = useNavigate();

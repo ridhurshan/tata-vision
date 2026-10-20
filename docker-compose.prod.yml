@@ -1,0 +1,92 @@
+name: tata-vision
+
+services:
+  frontend:
+    image: ${IMAGE_PREFIX:?Set IMAGE_PREFIX}-frontend:${IMAGE_TAG:?Set IMAGE_TAG}
+    ports:
+      - "127.0.0.1:${APP_PORT:-8090}:80"
+    networks:
+      default:
+      paas:
+        aliases:
+          - tata-vision
+    depends_on:
+      backend:
+        condition: service_healthy
+    restart: unless-stopped
+
+  backend:
+    image: ${IMAGE_PREFIX:?Set IMAGE_PREFIX}-backend:${IMAGE_TAG:?Set IMAGE_TAG}
+    environment:
+      PORT: 5000
+      DB_HOST: database
+      DB_USER: ${DB_USER:-tatavision}
+      DB_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      DB_NAME: ${DB_NAME:-tatavision}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET}
+      EMAIL_USER: ${EMAIL_USER:-}
+      EMAIL_APP_PASSWORD: ${EMAIL_APP_PASSWORD:-}
+      AI_SERVICE_URL: http://ai-service:5001
+    volumes:
+      - app_uploads:/app/backend/uploads
+    depends_on:
+      database:
+        condition: service_healthy
+      ai-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:5000/api/health"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+    restart: unless-stopped
+
+  ai-service:
+    image: ${IMAGE_PREFIX:?Set IMAGE_PREFIX}-ai-service:${IMAGE_TAG:?Set IMAGE_TAG}
+    environment:
+      SAM_CHECKPOINT: /models/sam_vit_h_4b8939.pth
+      HF_HOME: /root/.cache/huggingface
+    volumes:
+      - app_uploads:/app/backend/uploads
+      - hf_cache:/root/.cache/huggingface
+      - type: bind
+        source: ${SAM_MODEL_PATH:-/opt/tata-vision/models/sam_vit_h_4b8939.pth}
+        target: /models/sam_vit_h_4b8939.pth
+        read_only: true
+        bind:
+          create_host_path: false
+    healthcheck:
+      test: ["CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://127.0.0.1:5001/health', timeout=5)"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    restart: unless-stopped
+
+  database:
+    image: mysql:8.4
+    environment:
+      MYSQL_DATABASE: ${DB_NAME:-tatavision}
+      MYSQL_USER: ${DB_USER:-tatavision}
+      MYSQL_PASSWORD: ${DB_PASSWORD:?Set DB_PASSWORD}
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:?Set MYSQL_ROOT_PASSWORD}
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD-SHELL", "mysqladmin ping -h 127.0.0.1 -u root -p$$MYSQL_ROOT_PASSWORD --silent"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    restart: unless-stopped
+
+volumes:
+  app_uploads:
+  hf_cache:
+  mysql_data:
+
+networks:
+  paas:
+    external: true
+    name: ${PAAS_NETWORK:-paas_paas}

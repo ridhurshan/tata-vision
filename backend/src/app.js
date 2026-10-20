@@ -16,6 +16,10 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
+app.get("/api/health", (req, res) => {
+  res.json({ status: "Backend service running" });
+});
+
 
 // ======================================================
 // SERVE GENERATED AI IMAGES

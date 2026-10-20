@@ -41,7 +41,7 @@ const ViewProject = () => {
   const { projectId } = useParams();
   const navigate = useNavigate();
 
-    const BACKEND_URL = 'http://localhost:5002';
+    const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || '';
 
   const [project, setProject] = useState(null);
   const [processingProgress, setProcessingProgress] = useState(null);
