@@ -7,6 +7,7 @@ through the normal pipeline unchanged.
 
 from pathlib import Path
 from threading import Lock
+import urllib.request
 
 import cv2
 import numpy as np
@@ -18,9 +19,35 @@ COLORIZER_MODELS = COLORIZER_ROOT / "models"
 COLORIZER_PROTOTXT = COLORIZER_MODELS / "models_colorization_deploy_v2.prototxt"
 COLORIZER_MODEL = COLORIZER_MODELS / "colorization_release_v2.caffemodel"
 COLORIZER_POINTS = COLORIZER_MODELS / "pts_in_hull.npy"
+COLORIZER_MODEL_URL = (
+    "https://eecs.berkeley.edu/~rich.zhang/projects/2016_colorization/"
+    "files/demo_v2/colorization_release_v2.caffemodel"
+)
 
 _net = None
 _model_lock = Lock()
+
+
+def _download_colorizer_model():
+    """Download the large optional model once, outside the Git repository."""
+    if COLORIZER_MODEL.is_file():
+        return
+
+    COLORIZER_MODELS.mkdir(parents=True, exist_ok=True)
+    temporary_model = COLORIZER_MODEL.with_name(
+        f"{COLORIZER_MODEL.name}.part"
+    )
+    print("Downloading the grayscale colorizer model (one time)...")
+    try:
+        urllib.request.urlretrieve(COLORIZER_MODEL_URL, temporary_model)
+        temporary_model.replace(COLORIZER_MODEL)
+    except Exception as download_error:
+        if temporary_model.exists():
+            temporary_model.unlink()
+        raise RuntimeError(
+            "The grayscale colorizer model could not be downloaded. "
+            f"Download it manually from {COLORIZER_MODEL_URL}."
+        ) from download_error
 
 
 def image_needs_colorization(image_path):
@@ -49,6 +76,8 @@ def _get_colorizer_net():
     with _model_lock:
         if _net is not None:
             return _net
+
+        _download_colorizer_model()
 
         missing = [
             path for path in (COLORIZER_PROTOTXT, COLORIZER_MODEL, COLORIZER_POINTS)

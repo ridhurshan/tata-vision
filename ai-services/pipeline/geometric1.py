@@ -1283,7 +1283,7 @@ def split_by_color(m, rgb, K=3, min_frac=0.08):
 
 import urllib.request
 
-SAM_URLS = {"vit_h": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_h_4b8939.pth",
+SAM_URLS = {"vit_h": "/models/sam_vit_h_4b8939.pth",
             "vit_l": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_l_0b3195.pth",
             "vit_b": "https://dl.fbaipublicfiles.com/segment_anything/sam_vit_b_01ec64.pth"}
 SAM_CHECKPOINT_PATH = None
@@ -1295,13 +1295,17 @@ def sam_official_segments(image):
     global _sam_gen
     from segment_anything import sam_model_registry, SamAutomaticMaskGenerator
     if _sam_gen is None:
-        SAM_CHECKPOINT_DIR.mkdir(exist_ok=True)
-        ckpt = Path(SAM_CHECKPOINT_PATH) if SAM_CHECKPOINT_PATH else (
-            SAM_CHECKPOINT_DIR / SAM_URLS[SAM_MODEL_TYPE].split("/")[-1]
-        )
+        source = SAM_URLS[SAM_MODEL_TYPE]
+        source_path = Path(source).expanduser()
+        ckpt = Path(SAM_CHECKPOINT_PATH) if SAM_CHECKPOINT_PATH else source_path
+        if not ckpt.is_file() and source.startswith(("http://", "https://")):
+            SAM_CHECKPOINT_DIR.mkdir(exist_ok=True)
+            ckpt = SAM_CHECKPOINT_DIR / source.split("/")[-1]
         if not ckpt.exists():
+            if not source.startswith(("http://", "https://")):
+                raise FileNotFoundError(f"SAM checkpoint not found: {source_path}")
             print(f"Downloading SAM {SAM_MODEL_TYPE} checkpoint (one time) …")
-            urllib.request.urlretrieve(SAM_URLS[SAM_MODEL_TYPE], ckpt)
+            urllib.request.urlretrieve(source, ckpt)
         sam = sam_model_registry[SAM_MODEL_TYPE](checkpoint=str(ckpt))
         sam.to(device=DEVICE); sam.eval()
         _sam_gen = SamAutomaticMaskGenerator(model=sam, points_per_side=32, pred_iou_thresh=0.86, stability_score_thresh=0.92,
