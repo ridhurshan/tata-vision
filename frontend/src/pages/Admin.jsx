@@ -154,13 +154,13 @@ useEffect(() => {
           </div>
 
           {error && (
-            <div className="tab-content" style={{ marginBottom: 20, color: '#dc2626' }}>
+            <div className="tab-content" style={{ marginBottom: 20, color: '#b96855' }}>
               {error}
             </div>
           )}
 
           {actionMessage && (
-            <div className="tab-content" style={{ marginBottom: 20, color: '#059669' }}>
+            <div className="tab-content" style={{ marginBottom: 20, color: '#39777d' }}>
               {actionMessage}
             </div>
           )}

@@ -1,0 +1,5 @@
+Image_ID,PSNR,SSIM,MAE,MSE,Delta_E,Inference_Time_ms
+monalisa.jpeg,23.39,0.963,0.0394,0.00458,8.14,211.51
+img1.jpg,22.8,0.9715,0.0505,0.005245,10.76,1108.91
+pexels-pixabay-141651.jpg,22.29,0.9574,0.0498,0.005902,10.05,9661.57
+pexels-pixabay-36755.jpg,18.3,0.948,0.098,0.014808,18.24,1311.67

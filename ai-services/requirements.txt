@@ -1,4 +1,9 @@
 Flask
 flask-cors
-opencv-python
 numpy
+opencv-python
+Pillow
+onnxruntime
+scipy
+scikit-image
+matplotlib

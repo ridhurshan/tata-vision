@@ -1,6 +1,6 @@
 const axios = require("axios");
 
-const AI_SERVICE_URL = "http://127.0.0.1:5001";
+const AI_SERVICE_URL = "http://127.0.0.1:5003";
 
 const processImage = async (projectId, inputPath) => {
   try {
@@ -15,7 +15,9 @@ const processImage = async (projectId, inputPath) => {
         input_path: inputPath,
       },
       {
-        timeout: 10 * 60 * 1000,
+        // The full-image stages plus per-detection stages can take longer
+        // than the original 30-minute limit on CPU-only machines.
+        timeout: 60 * 60 * 1000,
       }
     );
 

@@ -32,7 +32,7 @@ const Profile = () => {
     joinDate: '',
 
     avatar:
-      'https://ui-avatars.com/api/?name=User&size=150&background=6366f1&color=fff',
+      'https://ui-avatars.com/api/?name=User&size=150&background=5e969d&color=fff',
 
     stats: {
       projects: 0,
@@ -91,7 +91,7 @@ const Profile = () => {
         user.full_name ||
         user.email ||
         'User'
-      )}&size=150&background=6366f1&color=fff`;
+      )}&size=150&background=5e969d&color=fff`;
 
     const updatedProfile = {
       ...profile,

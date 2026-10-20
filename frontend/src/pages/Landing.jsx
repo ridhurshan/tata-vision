@@ -117,40 +117,40 @@ const Landing = () => {
               <svg viewBox="0 0 400 400" xmlns="http://www.w3.org/2000/svg">
                 <defs>
                   <linearGradient id="grad1" x1="0%" y1="0%" x2="100%" y2="100%">
-                    <stop offset="0%" style={{ stopColor: '#6366f1' }} />
-                    <stop offset="100%" style={{ stopColor: '#8b5cf6' }} />
+                    <stop offset="0%" style={{ stopColor: '#5e969d' }} />
+                    <stop offset="100%" style={{ stopColor: '#d88973' }} />
                   </linearGradient>
                 </defs>
                 {/* Background circles */}
-                <circle cx="200" cy="200" r="180" fill="#6366f1" opacity="0.05" />
-                <circle cx="200" cy="200" r="140" fill="#6366f1" opacity="0.08" />
-                <circle cx="200" cy="200" r="100" fill="#6366f1" opacity="0.12" />
+                <circle cx="200" cy="200" r="180" fill="#5e969d" opacity="0.05" />
+                <circle cx="200" cy="200" r="140" fill="#5e969d" opacity="0.08" />
+                <circle cx="200" cy="200" r="100" fill="#5e969d" opacity="0.12" />
                 
                 {/* Drawing/Pencil icon */}
-                <rect x="100" y="120" width="200" height="160" rx="12" fill="white" stroke="#6366f1" strokeWidth="3" />
-                <path d="M140 160 L180 200 L140 240" stroke="#6366f1" strokeWidth="3" fill="none" />
-                <path d="M260 160 L220 200 L260 240" stroke="#8b5cf6" strokeWidth="3" fill="none" />
-                <circle cx="200" cy="200" r="20" fill="#6366f1" opacity="0.2" />
-                <path d="M200 180 L200 220 M180 200 L220 200" stroke="#6366f1" strokeWidth="3" />
+                <rect x="100" y="120" width="200" height="160" rx="12" fill="white" stroke="#5e969d" strokeWidth="3" />
+                <path d="M140 160 L180 200 L140 240" stroke="#5e969d" strokeWidth="3" fill="none" />
+                <path d="M260 160 L220 200 L260 240" stroke="#d88973" strokeWidth="3" fill="none" />
+                <circle cx="200" cy="200" r="20" fill="#5e969d" opacity="0.2" />
+                <path d="M200 180 L200 220 M180 200 L220 200" stroke="#5e969d" strokeWidth="3" />
                 
                 {/* AI Sparkles */}
-                <circle cx="80" cy="80" r="6" fill="#6366f1" opacity="0.6">
+                <circle cx="80" cy="80" r="6" fill="#5e969d" opacity="0.6">
                   <animate attributeName="r" values="4;8;4" dur="2s" repeatCount="indefinite" />
                 </circle>
-                <circle cx="320" cy="80" r="6" fill="#8b5cf6" opacity="0.6">
+                <circle cx="320" cy="80" r="6" fill="#d88973" opacity="0.6">
                   <animate attributeName="r" values="6;10;6" dur="2.5s" repeatCount="indefinite" />
                 </circle>
-                <circle cx="80" cy="320" r="6" fill="#6366f1" opacity="0.6">
+                <circle cx="80" cy="320" r="6" fill="#5e969d" opacity="0.6">
                   <animate attributeName="r" values="5;9;5" dur="1.8s" repeatCount="indefinite" />
                 </circle>
-                <circle cx="320" cy="320" r="6" fill="#8b5cf6" opacity="0.6">
+                <circle cx="320" cy="320" r="6" fill="#d88973" opacity="0.6">
                   <animate attributeName="r" values="4;7;4" dur="2.2s" repeatCount="indefinite" />
                 </circle>
                 
                 {/* Magic wand */}
-                <line x1="280" y1="120" x2="320" y2="80" stroke="#fbbf24" strokeWidth="4" strokeLinecap="round" />
-                <circle cx="320" cy="80" r="8" fill="#fbbf24" opacity="0.8" />
-                <path d="M316 76 L324 84 M324 76 L316 84" stroke="#f59e0b" strokeWidth="2" />
+                <line x1="280" y1="120" x2="320" y2="80" stroke="#d88973" strokeWidth="4" strokeLinecap="round" />
+                <circle cx="320" cy="80" r="8" fill="#d88973" opacity="0.8" />
+                <path d="M316 76 L324 84 M324 76 L316 84" stroke="#b96855" strokeWidth="2" />
               </svg>
             </div>
           </div>

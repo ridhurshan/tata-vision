@@ -99,12 +99,12 @@ const Navbar = () => {
     } else {
 
       const generatedAvatar =
-        `https://ui-avatars.com/api/?name=${encodeURIComponent(
+          `https://ui-avatars.com/api/?name=${encodeURIComponent(
           user.name ||
           user.full_name ||
           user.email ||
           'User'
-        )}&size=150&background=6366f1&color=fff`;
+        )}&size=150&background=5e969d&color=fff`;
 
       setProfileAvatar(
         generatedAvatar

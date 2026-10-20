@@ -6,13 +6,7 @@ export const createProject = (
 
     return api.post(
         "/projects",
-        formData,
-        {
-            headers: {
-                "Content-Type":
-                    "multipart/form-data"
-            }
-        }
+        formData
     );
 
 };
@@ -23,6 +17,10 @@ export const getProjects = () => {
 
 export const getProject = (id) => {
   return api.get(`/projects/${id}`);
+};
+
+export const updateProject = (id, data) => {
+  return api.put(`/projects/${id}`, data);
 };
 
 export const getProjectsByUser = (userId) => {  

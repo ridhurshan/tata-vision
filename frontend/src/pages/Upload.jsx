@@ -97,10 +97,6 @@ const Upload = () => {
       setError('Please select an image first.');
       return;
     }
-    if (!title.trim()) {
-      setError('Please give your project a title.');
-      return;
-    }
     if (!user) {
       setError('You must be logged in to upload.');
       return;
@@ -133,7 +129,7 @@ const Upload = () => {
 
           formData.append(
               "title",
-              title
+              title.trim()
           );
 
 
@@ -205,10 +201,12 @@ const Upload = () => {
           );
 
 
-          setError(
-              err.response?.data?.message ||
-              "Upload failed. Please try again."
-          );
+      setError(
+        err.response?.data?.message ||
+        (err.request
+          ? "Could not reach the upload server. Please check that the backend is running and try again."
+          : "Upload failed. Please try again.")
+      );
 
       }
   };
@@ -308,12 +306,12 @@ const Upload = () => {
                   </div>
 
                   <div className="form-group" style={{ marginTop: '1rem' }}>
-                    <label>Project Title</label>
+                    <label>Project Title (optional)</label>
                     <input
                       type="text"
                       value={title}
                       onChange={(e) => setTitle(e.target.value)}
-                      placeholder="e.g. Portrait Drawing"
+                      placeholder="Leave blank for Project - 04"
                       className="edit-input"
                     />
                   </div>
@@ -334,8 +332,12 @@ const Upload = () => {
                       Remove
                     </button>
                     <button
+                      type="button"
                       className="upload-btn"
-                      onClick={handleUpload}
+                      onClick={(event) => {
+                        event.stopPropagation();
+                        handleUpload();
+                      }}
                       disabled={isUploading}
                     >
                       {isUploading ? 'Uploading...' : 'Upload to AI'}

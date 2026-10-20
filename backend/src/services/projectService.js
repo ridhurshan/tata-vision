@@ -26,6 +26,11 @@ exports.updateProject = async (id, project) => {
     return { message: "Project updated successfully" };
 };
 
+exports.updateTitle = async (id, title) => {
+    await Project.updateTitle(id, title);
+    return { message: "Project title updated successfully" };
+};
+
 exports.deleteProject = async (id) => {
     await Project.delete(id);
     return { message: "Project deleted successfully" };

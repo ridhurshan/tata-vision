@@ -180,7 +180,7 @@ const Sidebar = () => {
           <div className="user-section">
             <div className="user-avatar">
               <img 
-                src="https://ui-avatars.com/api/?name=John+Doe&size=40&background=6366f1&color=fff" 
+                src="https://ui-avatars.com/api/?name=John+Doe&size=40&background=5e969d&color=fff"
                 alt="User Avatar"
               />
             </div>

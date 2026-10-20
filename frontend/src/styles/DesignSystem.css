@@ -16,6 +16,12 @@
   --studio-deep-aqua: #5e969d;
   --studio-coral: #d88973;
   --studio-navy: #203544;
+  --studio-coral-deep: #b96855;
+  --studio-success: #39777d;
+  --studio-success-soft: #dff7f2;
+  --studio-danger-soft: #ffebe5;
+  --studio-warning: #9a6a3a;
+  --studio-warning-soft: #fff1df;
   --studio-shadow: 0 24px 70px rgba(56, 95, 105, 0.16);
   --studio-soft-shadow: 0 12px 32px rgba(56, 95, 105, 0.1);
   --studio-serif: Georgia, 'Times New Roman', serif;
@@ -1143,5 +1149,915 @@ textarea:focus-visible {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+}
+
+/* -------------------------------------------------------------------------- */
+/* Theme completion: legacy surfaces brought into the studio palette          */
+/* -------------------------------------------------------------------------- */
+
+html {
+  color-scheme: light;
+}
+
+button:not(:disabled),
+a[class*='btn'],
+.nav-link,
+.social-link,
+.project-card,
+.stat-card,
+.workflow-card,
+.feature-card,
+.quick-link {
+  transition-property: color, background-color, border-color, box-shadow, transform, opacity;
+  transition-duration: 0.28s;
+  transition-timing-function: ease;
+}
+
+button:not(:disabled):active,
+a[class*='btn']:active {
+  transform: translateY(1px) scale(0.985);
+}
+
+/* Navbar and landing navigation */
+.navbar .nav-link:hover,
+.navbar .nav-link.active,
+.landing-nav .nav-link:hover,
+.landing-nav .nav-link.active {
+  color: var(--studio-ink) !important;
+  background: rgba(159, 207, 211, 0.2) !important;
+}
+
+.navbar .nav-link.active::after,
+.landing-nav .nav-link.active::after {
+  background: var(--studio-coral) !important;
+}
+
+.landing-nav .nav-link.btn-primary {
+  border-radius: 13px !important;
+  background: var(--studio-navy) !important;
+  color: white !important;
+  box-shadow: 0 12px 22px rgba(32, 53, 68, 0.17) !important;
+}
+
+.landing-nav .nav-link.btn-primary:hover {
+  background: #2f5060 !important;
+  box-shadow: 0 16px 28px rgba(32, 53, 68, 0.24) !important;
+}
+
+.hamburger .bar {
+  background: var(--studio-ink) !important;
+}
+
+.nav-links .nav-link:hover,
+.nav-links .nav-link.active {
+  color: var(--studio-ink) !important;
+}
+
+/* Auth recovery and verification states */
+.auth-card,
+.auth-page .auth-container {
+  border-color: var(--studio-border) !important;
+  background: rgba(255, 255, 252, 0.76) !important;
+  box-shadow: var(--studio-shadow) !important;
+}
+
+.auth-page .auth-header h2,
+.auth-page .form-title {
+  color: var(--studio-ink) !important;
+  font-family: var(--studio-serif);
+}
+
+.auth-page .auth-header p,
+.auth-page .form-subtitle,
+.auth-page .auth-footer,
+.auth-page .form-group small {
+  color: var(--studio-muted) !important;
+}
+
+.auth-form-group label,
+.form-group label {
+  color: var(--studio-ink) !important;
+}
+
+.auth-form-group input,
+.auth-page .form-group input,
+.auth-page .auth-form input,
+.auth-page .auth-form textarea {
+  border-color: rgba(32, 53, 68, 0.15) !important;
+  background: rgba(255, 255, 252, 0.82) !important;
+  color: var(--studio-ink) !important;
+}
+
+.auth-form-group input:focus,
+.auth-page .form-group input:focus,
+.auth-page .auth-form input:focus,
+.auth-page .auth-form textarea:focus {
+  border-color: var(--studio-deep-aqua) !important;
+  box-shadow: 0 0 0 4px rgba(94, 150, 157, 0.13) !important;
+}
+
+.auth-primary-button,
+.auth-page .auth-btn {
+  background: var(--studio-navy) !important;
+  color: white !important;
+  box-shadow: 0 12px 22px rgba(32, 53, 68, 0.17) !important;
+}
+
+.auth-primary-button:hover:not(:disabled),
+.auth-page .auth-btn:hover:not(:disabled) {
+  background: #2f5060 !important;
+  box-shadow: 0 16px 28px rgba(32, 53, 68, 0.24) !important;
+  transform: translateY(-2px);
+}
+
+.auth-secondary-button,
+.secondary-auth-btn {
+  border-color: rgba(32, 53, 68, 0.14) !important;
+  background: rgba(255, 255, 252, 0.58) !important;
+  color: var(--studio-ink) !important;
+}
+
+.auth-secondary-button:hover:not(:disabled),
+.secondary-auth-btn:hover:not(:disabled) {
+  border-color: var(--studio-coral) !important;
+  background: rgba(255, 255, 252, 0.9) !important;
+}
+
+.auth-step-info {
+  background: rgba(159, 207, 211, 0.18) !important;
+  color: var(--studio-muted) !important;
+}
+
+.auth-step-number {
+  background: var(--studio-deep-aqua) !important;
+}
+
+.auth-back-link,
+.forgot-link,
+.agree-terms a,
+.auth-footer a {
+  color: var(--studio-deep-aqua) !important;
+}
+
+.auth-error-message {
+  border-color: rgba(216, 137, 115, 0.38) !important;
+  background: var(--studio-danger-soft) !important;
+  color: var(--studio-coral-deep) !important;
+}
+
+.auth-success-message {
+  border-color: rgba(94, 150, 157, 0.34) !important;
+  background: var(--studio-success-soft) !important;
+  color: var(--studio-success) !important;
+}
+
+.auth-page input[type='checkbox'],
+.toggle-input {
+  accent-color: var(--studio-deep-aqua) !important;
+}
+
+/* Admin surface */
+.admin-page {
+  background: transparent !important;
+}
+
+.admin-header,
+.admin-tabs,
+.admin-page .tab-content,
+.admin-page .table-container,
+.admin-page .stat-card {
+  border: 1px solid var(--studio-border) !important;
+  border-radius: 22px !important;
+  background: rgba(255, 255, 252, 0.66) !important;
+  box-shadow: var(--studio-soft-shadow) !important;
+  backdrop-filter: blur(16px);
+}
+
+.admin-header {
+  padding: 28px 32px;
+}
+
+.admin-page .header-left h1,
+.admin-page .stat-info h3,
+.admin-page .recent-activity h3,
+.admin-page .analytics-placeholder h3,
+.admin-page .settings-placeholder h3 {
+  color: var(--studio-ink) !important;
+  font-family: var(--studio-serif);
+}
+
+.admin-page .subtitle,
+.admin-page .stat-info p,
+.admin-page .activity-time,
+.admin-page .analytics-placeholder,
+.admin-page .settings-placeholder,
+.admin-page .admin-loading p {
+  color: var(--studio-muted) !important;
+}
+
+.btn-notification,
+.btn-settings {
+  border: 1px solid rgba(32, 53, 68, 0.1) !important;
+  background: rgba(159, 207, 211, 0.18) !important;
+  color: var(--studio-ink) !important;
+}
+
+.btn-notification:hover,
+.btn-settings:hover {
+  background: rgba(159, 207, 211, 0.34) !important;
+}
+
+.admin-tabs {
+  padding: 7px;
+}
+
+.tab-btn {
+  color: var(--studio-muted) !important;
+}
+
+.tab-btn:hover {
+  color: var(--studio-ink) !important;
+  background: rgba(159, 207, 211, 0.18) !important;
+}
+
+.tab-btn.active {
+  background: var(--studio-navy) !important;
+  color: white !important;
+}
+
+.admin-page .admin-table th {
+  background: rgba(159, 207, 211, 0.16) !important;
+  color: var(--studio-ink) !important;
+  border-bottom-color: var(--studio-line) !important;
+}
+
+.admin-page .admin-table td {
+  color: var(--studio-ink) !important;
+  border-bottom-color: var(--studio-line) !important;
+}
+
+.admin-page .admin-table tr:hover,
+.activity-item:hover {
+  background: rgba(159, 207, 211, 0.12) !important;
+}
+
+.activity-item {
+  background: rgba(255, 255, 252, 0.48) !important;
+}
+
+.activity-info p {
+  color: var(--studio-ink) !important;
+}
+
+.users-icon,
+.projects-icon,
+.revenue-icon,
+.active-icon,
+.btn-action.edit,
+.btn-action.view,
+.role-artist {
+  background: rgba(159, 207, 211, 0.28) !important;
+  color: var(--studio-deep-aqua) !important;
+}
+
+.artworks-icon,
+.status-processing,
+.status-pending {
+  background: var(--studio-warning-soft) !important;
+  color: var(--studio-warning) !important;
+}
+
+.pending-icon,
+.role-admin,
+.btn-action.delete,
+.status-suspended {
+  background: var(--studio-danger-soft) !important;
+  color: var(--studio-coral-deep) !important;
+}
+
+.role-user,
+.status-inactive {
+  background: rgba(32, 53, 68, 0.08) !important;
+  color: var(--studio-muted) !important;
+}
+
+.status-active,
+.status-completed {
+  background: var(--studio-success-soft) !important;
+  color: var(--studio-success) !important;
+}
+
+.btn-action.edit:hover,
+.btn-action.view:hover {
+  background: rgba(159, 207, 211, 0.44) !important;
+}
+
+.btn-action.delete:hover {
+  background: rgba(216, 137, 115, 0.24) !important;
+}
+
+.admin-page .loading-spinner,
+.projects-loading .loading-spinner {
+  border-color: rgba(94, 150, 157, 0.2) !important;
+  border-top-color: var(--studio-coral) !important;
+}
+
+/* Sidebar, when enabled on dashboard variants */
+.sidebar {
+  background: var(--studio-navy) !important;
+  color: rgba(255, 255, 255, 0.82) !important;
+  box-shadow: 16px 0 42px rgba(32, 53, 68, 0.16);
+}
+
+.sidebar-brand {
+  border-bottom-color: rgba(255, 255, 255, 0.12) !important;
+}
+
+.sidebar .brand-name,
+.sidebar .user-name {
+  color: white !important;
+}
+
+.sidebar .brand-logo,
+.sidebar .sidebar-toggle {
+  background: rgba(255, 255, 252, 0.9) !important;
+}
+
+.sidebar .sidebar-collapse-btn,
+.sidebar .nav-link:hover,
+.sidebar .user-section:hover {
+  background: rgba(159, 207, 211, 0.14) !important;
+}
+
+.sidebar .nav-link {
+  color: rgba(255, 255, 255, 0.64) !important;
+}
+
+.sidebar .nav-link:hover,
+.sidebar .nav-link.active {
+  color: white !important;
+}
+
+.sidebar .nav-link.active {
+  background: rgba(159, 207, 211, 0.18) !important;
+}
+
+.sidebar .nav-link.active::before {
+  background: var(--studio-coral) !important;
+}
+
+.sidebar .nav-badge {
+  background: var(--studio-coral) !important;
+}
+
+.sidebar .user-role,
+.sidebar .sidebar-collapse-btn {
+  color: rgba(255, 255, 255, 0.58) !important;
+}
+
+.sidebar .logout-btn {
+  background: rgba(216, 137, 115, 0.14) !important;
+  color: #ffd2c5 !important;
+}
+
+.sidebar .logout-btn:hover {
+  background: rgba(216, 137, 115, 0.28) !important;
+}
+
+/* Footer newsletter and footer links */
+.footer-list li a:hover,
+.footer-bottom-links a:hover {
+  color: var(--studio-aqua) !important;
+}
+
+.newsletter-input:focus {
+  border-color: var(--studio-aqua) !important;
+  box-shadow: 0 0 0 4px rgba(159, 207, 211, 0.16) !important;
+}
+
+.newsletter-btn {
+  background: linear-gradient(135deg, var(--studio-deep-aqua), var(--studio-coral)) !important;
+  box-shadow: 0 10px 24px rgba(94, 150, 157, 0.22) !important;
+}
+
+.newsletter-btn:hover {
+  box-shadow: 0 14px 28px rgba(94, 150, 157, 0.3) !important;
+}
+
+/* 404 page */
+.not-found-page {
+  background: transparent !important;
+}
+
+.not-found-page::before {
+  background: radial-gradient(circle, rgba(159, 207, 211, 0.25) 0%, transparent 70%) !important;
+}
+
+.not-found-page::after {
+  background: radial-gradient(circle, rgba(216, 137, 115, 0.18) 0%, transparent 70%) !important;
+}
+
+.not-found-content {
+  border-color: var(--studio-border) !important;
+  background: rgba(255, 255, 252, 0.72) !important;
+  box-shadow: var(--studio-shadow) !important;
+}
+
+.not-found-content .error-title {
+  color: var(--studio-ink) !important;
+  font-family: var(--studio-serif);
+}
+
+.not-found-content .error-description,
+.quick-links-title {
+  color: var(--studio-muted) !important;
+}
+
+.not-found-content .btn-primary {
+  border-radius: 14px !important;
+  background: var(--studio-navy) !important;
+  box-shadow: 0 12px 22px rgba(32, 53, 68, 0.17) !important;
+}
+
+.not-found-content .btn-primary:hover {
+  background: #2f5060 !important;
+  box-shadow: 0 16px 28px rgba(32, 53, 68, 0.24) !important;
+}
+
+.not-found-content .btn-secondary,
+.quick-link {
+  border: 1px solid rgba(32, 53, 68, 0.1) !important;
+  background: rgba(255, 255, 252, 0.58) !important;
+  color: var(--studio-ink) !important;
+}
+
+.not-found-content .btn-secondary:hover,
+.quick-link:hover {
+  border-color: var(--studio-coral) !important;
+  background: rgba(255, 255, 252, 0.88) !important;
+  color: var(--studio-ink) !important;
+  box-shadow: var(--studio-soft-shadow) !important;
+}
+
+.quick-links {
+  border-top-color: var(--studio-line) !important;
+}
+
+.error-fun-fact {
+  border-color: rgba(94, 150, 157, 0.3) !important;
+  background: var(--studio-success-soft) !important;
+}
+
+.error-fun-fact p {
+  color: var(--studio-ink) !important;
+}
+
+.error-fun-fact strong {
+  color: var(--studio-success) !important;
+}
+
+/* Dashboard details */
+.dashboard-page .recent-section {
+  background: transparent !important;
+  border-top-color: transparent !important;
+  border-bottom-color: transparent !important;
+}
+
+.dashboard-page .dashboard-hero,
+.dashboard-page .dashboard-cta {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.22), transparent 24%),
+    linear-gradient(135deg, var(--studio-navy), var(--studio-deep-aqua)) !important;
+}
+
+.dashboard-page .dashboard-hero {
+  background:
+    radial-gradient(circle at 88% 12%, rgba(255, 255, 255, 0.85), transparent 24%),
+    linear-gradient(135deg, rgba(255,255,252,0.78), rgba(188,225,229,0.44)) !important;
+}
+
+.dashboard-page .dashboard-primary-btn,
+.dashboard-page .cta-button {
+  background: var(--studio-navy) !important;
+  color: white !important;
+}
+
+.dashboard-page .dashboard-secondary-btn {
+  color: var(--studio-ink) !important;
+}
+
+.dashboard-page .dashboard-secondary-btn:hover {
+  border-color: var(--studio-coral) !important;
+  color: var(--studio-ink) !important;
+  background: rgba(255, 255, 252, 0.9) !important;
+}
+
+.dashboard-page .demo-stage.active .demo-number,
+.dashboard-page .stat-purple,
+.dashboard-page .workflow-icon {
+  border-color: rgba(94, 150, 157, 0.38) !important;
+  background: rgba(159, 207, 211, 0.3) !important;
+  color: var(--studio-deep-aqua) !important;
+}
+
+.dashboard-page .demo-stage.current .demo-number {
+  background: linear-gradient(135deg, var(--studio-deep-aqua), var(--studio-coral)) !important;
+}
+
+.dashboard-page .demo-stage.current strong,
+.dashboard-page .view-all-btn,
+.dashboard-page .recent-project-info button {
+  color: var(--studio-deep-aqua) !important;
+}
+
+.dashboard-page .demo-processing {
+  border-color: rgba(159, 207, 211, 0.35) !important;
+  border-top-color: var(--studio-coral) !important;
+}
+
+.dashboard-page .demo-line {
+  background: rgba(94, 150, 157, 0.38) !important;
+}
+
+.dashboard-page .stat-orange {
+  background: var(--studio-warning-soft) !important;
+  color: var(--studio-warning) !important;
+}
+
+.dashboard-page .stat-green,
+.dashboard-page .demo-check {
+  background: var(--studio-success-soft) !important;
+  color: var(--studio-success) !important;
+}
+
+.dashboard-page .empty-projects,
+.dashboard-page .workflow-card {
+  border-color: var(--studio-border) !important;
+  background: rgba(255, 255, 252, 0.68) !important;
+}
+
+.dashboard-page .empty-project-icon {
+  background: rgba(159, 207, 211, 0.28) !important;
+  color: var(--studio-deep-aqua) !important;
+}
+
+.dashboard-page .workflow-card:hover {
+  border-color: rgba(216, 137, 115, 0.44) !important;
+  box-shadow: var(--studio-soft-shadow) !important;
+}
+
+.dashboard-page .workflow-number {
+  color: rgba(94, 150, 157, 0.3) !important;
+}
+
+.dashboard-page .dashboard-cta {
+  background:
+    radial-gradient(circle at 90% 15%, rgba(255, 255, 255, 0.17), transparent 25%),
+    linear-gradient(135deg, var(--studio-navy), var(--studio-deep-aqua)) !important;
+  box-shadow: 0 20px 45px rgba(56, 95, 105, 0.2) !important;
+}
+
+.dashboard-page .cta-button {
+  background: rgba(255, 255, 252, 0.92) !important;
+  color: var(--studio-navy) !important;
+}
+
+/* Upload and project library details */
+.upload-page .upload-area.has-image {
+  border-color: var(--studio-deep-aqua) !important;
+  background: rgba(223, 247, 242, 0.52) !important;
+}
+
+.upload-page .remove-btn:hover,
+.upload-page .remove-file-btn:hover,
+.projects-page .btn-delete:hover,
+.projects-page .clear-search:hover {
+  background: rgba(216, 137, 115, 0.2) !important;
+  color: var(--studio-coral-deep) !important;
+}
+
+.upload-page .progress-text {
+  color: var(--studio-deep-aqua) !important;
+}
+
+.upload-page .requirements-panel li svg {
+  color: var(--studio-deep-aqua) !important;
+}
+
+.projects-page .status-completed {
+  background: var(--studio-success-soft) !important;
+  color: var(--studio-success) !important;
+}
+
+.projects-page .status-processing {
+  background: var(--studio-warning-soft) !important;
+  color: var(--studio-warning) !important;
+}
+
+.projects-page .status-failed {
+  background: var(--studio-danger-soft) !important;
+  color: var(--studio-coral-deep) !important;
+}
+
+.projects-page .status-draft {
+  background: rgba(32, 53, 68, 0.08) !important;
+  color: var(--studio-muted) !important;
+}
+
+.projects-page .btn-delete {
+  background: var(--studio-danger-soft) !important;
+  color: var(--studio-coral-deep) !important;
+}
+
+/* Profile controls */
+.profile-page .btn-edit,
+.profile-page .btn-save {
+  background: var(--studio-navy) !important;
+  color: white !important;
+  box-shadow: 0 12px 22px rgba(32, 53, 68, 0.17) !important;
+}
+
+.profile-page .btn-edit:hover,
+.profile-page .btn-save:hover {
+  background: #2f5060 !important;
+  box-shadow: 0 16px 28px rgba(32, 53, 68, 0.24) !important;
+}
+
+.profile-page .btn-edit.btn-cancel,
+.profile-page .btn-cancel-edit {
+  background: rgba(255, 255, 252, 0.58) !important;
+  color: var(--studio-ink) !important;
+  border: 1px solid rgba(32, 53, 68, 0.14) !important;
+}
+
+.profile-page .btn-edit.btn-cancel:hover,
+.profile-page .btn-cancel-edit:hover {
+  background: rgba(255, 255, 252, 0.9) !important;
+  border-color: var(--studio-coral) !important;
+}
+
+.profile-page .avatar-upload {
+  background: var(--studio-coral) !important;
+}
+
+.profile-page .avatar-upload:hover {
+  background: var(--studio-coral-deep) !important;
+}
+
+.profile-page .profile-role,
+.profile-page .info-field a {
+  color: var(--studio-deep-aqua) !important;
+}
+
+.profile-page .preference-item {
+  background: rgba(159, 207, 211, 0.12) !important;
+}
+
+.profile-page .preference-item:hover {
+  background: rgba(159, 207, 211, 0.24) !important;
+}
+
+/* Project viewer controls and galleries */
+.view-project-page .loading-spinner {
+  border-color: rgba(94, 150, 157, 0.2) !important;
+  border-top-color: var(--studio-coral) !important;
+}
+
+.view-project-page .project-edit-button,
+.view-project-page .view-detection-crop-button {
+  border-color: rgba(94, 150, 157, 0.45) !important;
+  background: rgba(255, 255, 252, 0.68) !important;
+  color: var(--studio-deep-aqua) !important;
+}
+
+.view-project-page .project-edit-button:hover,
+.view-project-page .view-detection-crop-button:hover {
+  border-color: var(--studio-coral) !important;
+  background: rgba(255, 255, 252, 0.9) !important;
+}
+
+.view-project-page .project-details-editor input,
+.view-project-page .project-details-editor textarea {
+  border-color: rgba(32, 53, 68, 0.15) !important;
+  background: rgba(255, 255, 252, 0.78) !important;
+  color: var(--studio-ink) !important;
+}
+
+.view-project-page .project-details-editor input:focus,
+.view-project-page .project-details-editor textarea:focus {
+  outline-color: rgba(94, 150, 157, 0.22) !important;
+  border-color: var(--studio-deep-aqua) !important;
+}
+
+.view-project-page .project-details-save,
+.view-project-page .btn-primary {
+  border-color: var(--studio-navy) !important;
+  background: var(--studio-navy) !important;
+  color: white !important;
+}
+
+.view-project-page .project-details-save:hover,
+.view-project-page .btn-primary:hover {
+  border-color: #2f5060 !important;
+  background: #2f5060 !important;
+}
+
+.view-project-page .project-details-cancel,
+.view-project-page .btn-outline {
+  border-color: rgba(32, 53, 68, 0.14) !important;
+  background: rgba(255, 255, 252, 0.58) !important;
+  color: var(--studio-ink) !important;
+}
+
+.view-project-page .project-details-cancel:hover,
+.view-project-page .btn-outline:hover {
+  border-color: var(--studio-coral) !important;
+  color: var(--studio-ink) !important;
+}
+
+.view-project-page .detected-object-card:hover,
+.view-project-page .detection-step-card:hover,
+.view-project-page .detection-step-card.active {
+  border-color: rgba(94, 150, 157, 0.55) !important;
+  box-shadow: 0 12px 24px rgba(56, 95, 105, 0.11) !important;
+}
+
+.view-project-page .detected-object-card:focus-visible,
+.view-project-page .shading-preview-card:focus-visible {
+  outline-color: rgba(216, 137, 115, 0.5) !important;
+}
+
+.shading-gallery-arrow:hover {
+  background: var(--studio-coral) !important;
+}
+
+.shading-gallery-arrow:focus-visible {
+  outline-color: rgba(216, 137, 115, 0.5) !important;
+}
+
+.shading-gallery .shading-preview-card.active {
+  border-color: var(--studio-coral) !important;
+  box-shadow: 0 0 0 2px rgba(216, 137, 115, 0.3) !important;
+}
+
+/* Page entrance and staggered content motion */
+.landing-page,
+.dashboard-page,
+.projects-page,
+.upload-page,
+.view-project-page,
+.profile-page,
+.admin-page,
+.auth-page,
+.not-found-page {
+  animation: studio-page-enter 0.65s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-page .feature-card,
+.dashboard-page .stat-card,
+.dashboard-page .workflow-card,
+.projects-page .project-card,
+.admin-page .stat-card {
+  animation: studio-rise 0.58s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.landing-page .feature-card:nth-child(2),
+.dashboard-page .stat-card:nth-child(2),
+.dashboard-page .workflow-card:nth-child(2),
+.projects-page .project-card:nth-child(2),
+.admin-page .stat-card:nth-child(2) {
+  animation-delay: 70ms;
+}
+
+.landing-page .feature-card:nth-child(3),
+.dashboard-page .stat-card:nth-child(3),
+.dashboard-page .workflow-card:nth-child(3),
+.projects-page .project-card:nth-child(3),
+.admin-page .stat-card:nth-child(3) {
+  animation-delay: 140ms;
+}
+
+.landing-page .feature-card:nth-child(4),
+.dashboard-page .workflow-card:nth-child(4),
+.admin-page .stat-card:nth-child(4) {
+  animation-delay: 210ms;
+}
+
+@keyframes studio-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes studio-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-delay: 0ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* Final navbar lock: keep the shell glassy and the action group contained. */
+.navbar,
+.landing-nav {
+  top: 18px !important;
+  right: auto !important;
+  left: 50% !important;
+  width: min(1180px, calc(100% - 42px)) !important;
+  min-height: 72px !important;
+  box-sizing: border-box !important;
+  border: 1px solid rgba(255, 255, 255, 0.48) !important;
+  border-radius: 23px !important;
+  background:
+    linear-gradient(110deg, rgba(255, 255, 252, 0.42), rgba(217, 240, 242, 0.3)) !important;
+  box-shadow: 0 18px 48px rgba(44, 90, 101, 0.16) !important;
+  backdrop-filter: blur(28px) saturate(160%) !important;
+  -webkit-backdrop-filter: blur(28px) saturate(160%) !important;
+}
+
+.navbar.navbar-scrolled,
+.landing-nav:hover {
+  background:
+    linear-gradient(110deg, rgba(255, 255, 252, 0.52), rgba(188, 225, 229, 0.44)) !important;
+  border-color: rgba(255, 255, 255, 0.64) !important;
+  box-shadow: 0 20px 56px rgba(44, 90, 101, 0.22) !important;
+}
+
+.navbar .navbar-container,
+.landing-nav .nav-container {
+  width: 100% !important;
+  max-width: none !important;
+  min-height: 72px !important;
+  box-sizing: border-box !important;
+  padding: 0 18px 0 20px !important;
+  gap: 12px;
+}
+
+.navbar .nav-links {
+  display: flex !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  justify-content: flex-end !important;
+}
+
+.navbar .nav-links ul {
+  min-width: 0 !important;
+  flex-wrap: nowrap !important;
+  gap: 5px !important;
+}
+
+.navbar .logout-btn,
+.navbar .register-btn {
+  min-height: 40px !important;
+  height: auto !important;
+  flex: 0 0 auto !important;
+  margin-left: 4px !important;
+  border-radius: 13px !important;
+  background: var(--studio-navy) !important;
+  color: white !important;
+}
+
+.navbar .logout-btn:hover,
+.navbar .register-btn:hover {
+  background: #304e60 !important;
+}
+
+@media (max-width: 768px) {
+  .navbar,
+  .landing-nav {
+    top: 10px !important;
+    width: calc(100% - 20px) !important;
+    min-height: 64px !important;
+    border-radius: 18px !important;
+  }
+
+  .navbar .navbar-container,
+  .landing-nav .nav-container {
+    min-height: 64px !important;
+    padding: 0 14px !important;
+  }
+
+  .navbar .nav-links {
+    justify-content: initial !important;
   }
 }

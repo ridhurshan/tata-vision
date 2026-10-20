@@ -11,6 +11,64 @@ const aiService =
 // CREATE PROJECT
 // ======================================================
 
+const processProjectWithAI = async (projectId, inputPath) => {
+    try {
+        console.log(
+            "Starting background AI processing for project:",
+            projectId
+        );
+
+        const aiResult = await aiService.processImage(
+            projectId,
+            inputPath
+        );
+
+        if (!aiResult || !aiResult.outputs) {
+            throw new Error(
+                "AI service returned no output manifest."
+            );
+        }
+
+        await projectService.updateAIOutputs(
+            projectId,
+            aiResult.outputs
+        );
+
+        // Keep the lifecycle state explicit. This makes the completion
+        // callback resilient if the output update query is changed later.
+        await projectService.updateStatus(
+            projectId,
+            "Completed"
+        );
+
+        console.log(
+            "Background AI processing completed for project:",
+            projectId,
+            "outputs:",
+            Object.keys(aiResult.outputs)
+        );
+    } catch (error) {
+        console.error(
+            "Background AI processing failed for project:",
+            projectId,
+            error?.stack || error
+        );
+
+        try {
+            await projectService.updateStatus(
+                projectId,
+                "Failed"
+            );
+        } catch (statusError) {
+            console.error(
+                "Could not mark project as Failed:",
+                projectId,
+                statusError
+            );
+        }
+    }
+};
+
 exports.createProject = async (req, res) => {
 
     try {
@@ -49,10 +107,16 @@ exports.createProject = async (req, res) => {
         // 2. BUILD PROJECT DATA
         // ==================================================
 
+        const submittedTitle = String(
+            req.body.title || ""
+        ).trim();
+
         const projectData = {
         user_id: req.user.id,
-        title: req.body.title,
-        description: req.body.description,
+        // The final ID is not available until INSERT completes. The
+        // temporary value is replaced immediately after creation below.
+        title: submittedTitle || "Project",
+        description: String(req.body.description || "").trim() || null,
 
         input_image:
             `/uploads/input/${req.file.filename}`,
@@ -80,6 +144,13 @@ exports.createProject = async (req, res) => {
 
         const projectId =
             result.projectId;
+
+        if (!submittedTitle) {
+            await projectService.updateTitle(
+                projectId,
+                `Project - ${String(projectId).padStart(2, "0")}`
+            );
+        }
 
 
         console.log(
@@ -122,50 +193,20 @@ exports.createProject = async (req, res) => {
         // 6. CALL PYTHON AI SERVICE
         // ==================================================
 
-        const aiResult =
-            await aiService.processImage(
-                projectId,
-                absoluteInputPath
-            );
-
-
-        console.log(
-            "AI processing completed:",
-            aiResult
-        );
-
-
-        // ==================================================
-        // 7. SAVE GENERATED IMAGE PATHS
-        // ==================================================
-
-        await projectService.updateAIOutputs(
+        // Start the long-running pipeline without keeping the browser upload
+        // request open until every CPU-heavy stage has finished.
+        void processProjectWithAI(
             projectId,
-            aiResult.outputs
+            absoluteInputPath
         );
-
-
-        // ==================================================
-        // 8. SEND RESPONSE TO FRONTEND
-        // ==================================================
 
         return res
-            .status(201)
+            .status(202)
             .json({
-
-                message:
-                    "Project created and processed successfully",
-
-                projectId:
-
-                    projectId,
-
-                inputImage:
-                    req.file.filename,
-
-                outputs:
-                    aiResult.outputs
-
+                message: "Project created. AI processing started.",
+                projectId,
+                inputImage: req.file.filename,
+                status: "Processing"
             });
 
 
@@ -339,7 +380,12 @@ exports.updateProject = async (req, res) => {
         const result =
             await projectService.updateProject(
                 req.params.id,
-                req.body
+                {
+                    title: String(req.body.title ?? project.title).trim() ||
+                        `Project - ${String(req.params.id).padStart(2, "0")}`,
+                    description: req.body.description ?? project.description,
+                    status: req.body.status ?? project.status
+                }
             );
 
         res.json(result);

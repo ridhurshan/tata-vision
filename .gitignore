@@ -1,2 +1,16 @@
+# Large AI model checkpoints
+ai-services/sam_checkpoints/
+ai-services/Colorizer-master/models/*.caffemodel
+ai-services/Colorizer-master/models.zip
+
+# Uploaded archives and generated files
+backend/uploads/*
+!backend/uploads/.gitkeep
+backend/src.zip
+
+# Python cache
+__pycache__/
+**/__pycache__/
+*.py[cod]
 node_modules/
 .env

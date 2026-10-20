@@ -57,6 +57,18 @@ const Project = {
         return result;
     },
 
+    async updateTitle(id, title) {
+        const [result] = await db.query(
+            `
+            UPDATE projects
+            SET title=?
+            WHERE id=?
+            `,
+            [title, id]
+        );
+        return result;
+    },
+
     async delete(id) {
         const [result] = await db.query("DELETE FROM projects WHERE id=?", [id]);
         return result;

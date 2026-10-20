@@ -28,16 +28,16 @@ const NotFound = () => {
           </div>
           <div className="error-icon">
             <svg viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
-              <circle cx="100" cy="100" r="80" fill="#6366f1" opacity="0.1" />
-              <circle cx="100" cy="100" r="60" fill="#6366f1" opacity="0.15" />
-              <circle cx="100" cy="100" r="40" fill="#6366f1" opacity="0.2" />
+              <circle cx="100" cy="100" r="80" fill="#5e969d" opacity="0.1" />
+              <circle cx="100" cy="100" r="60" fill="#5e969d" opacity="0.15" />
+              <circle cx="100" cy="100" r="40" fill="#5e969d" opacity="0.2" />
               {/* Compass/Search icon */}
-              <circle cx="100" cy="100" r="30" fill="none" stroke="#6366f1" strokeWidth="4" />
-              <line x1="100" y1="100" x2="120" y2="80" stroke="#6366f1" strokeWidth="4" strokeLinecap="round" />
-              <circle cx="100" cy="100" r="6" fill="#6366f1" />
+              <circle cx="100" cy="100" r="30" fill="none" stroke="#5e969d" strokeWidth="4" />
+              <line x1="100" y1="100" x2="120" y2="80" stroke="#5e969d" strokeWidth="4" strokeLinecap="round" />
+              <circle cx="100" cy="100" r="6" fill="#5e969d" />
               {/* Question marks */}
-              <text x="80" y="70" fontSize="24" fill="#6366f1" opacity="0.6">?</text>
-              <text x="130" y="140" fontSize="24" fill="#8b5cf6" opacity="0.6">?</text>
+              <text x="80" y="70" fontSize="24" fill="#5e969d" opacity="0.6">?</text>
+              <text x="130" y="140" fontSize="24" fill="#d88973" opacity="0.6">?</text>
             </svg>
           </div>
         </div>
