@@ -561,17 +561,25 @@ def run_faces(image, min_face=48):
     global _fa
     try:
         if _fa is None:
+            import inspect
             import face_alignment
             LT = face_alignment.LandmarksType
-            _fa = face_alignment.FaceAlignment(getattr(LT, "TWO_D", None) or getattr(LT, "_2D"), flip_input=False, device=DEVICE)
+            options = dict(flip_input=False, device=DEVICE)
+            # Avoid the compilation delay in versions that enable it by default.
+            if "compile" in inspect.signature(face_alignment.FaceAlignment).parameters:
+                options["compile"] = False
+            _fa = face_alignment.FaceAlignment(
+                getattr(LT, "TWO_D", None) or getattr(LT, "_2D"),
+                **options,
+            )
         preds = _fa.get_landmarks(image)               # expects RGB
     except Exception as e:
         print("Face landmarks disabled →", str(e)[:120])
         return []
     faces = []
-    for p in (preds or []):
+    for p in (preds if preds is not None else []):
         p = np.asarray(p, np.float32)
-        if p.shape == (68, 2) and (p[:, 0].max() - p[:, 0].min()) >= min_face:
+        if p.shape == (68, 2) and np.isfinite(p).all() and (p[:, 0].max() - p[:, 0].min()) >= min_face:
             faces.append(p)
     return faces
 
@@ -653,17 +661,38 @@ def analyse_scene(image):
     items = items[:MAX_ITEMS]
 
     # attach faces to people (or create a stand-alone face item)
-    people = [x for x in items if x.category == "human" and x.kp is not None]
+    people = [x for x in items if x.category == "human" or x.label == "person (no pose)"]
     for f in faces:
         c = f.mean(0)
         cand = [x for x in people if x.box[0] <= c[0] <= x.box[2] and x.box[1] <= c[1] <= x.box[3] and x.face is None]
         if cand:                                            # the person whose nose is closest to the face centre
             def d_nose(x):
-                return np.linalg.norm(x.kp[0] - c) if x.kpc[0] > 0.3 else 1e9
+                if x.kp is not None and x.kpc is not None and x.kpc[0] > 0.3:
+                    return np.linalg.norm(x.kp[0] - c)
+                return np.linalg.norm(np.array([(x.box[0] + x.box[2]) / 2, x.box[1]]) - c)
             min(cand, key=d_nose).face = f
         else:
             bx = (float(f[:, 0].min()), float(f[:, 1].min()), float(f[:, 0].max()), float(f[:, 1].max()))
             items.append(Item("face", 1.0, "human", bx, face=f, source="face"))
+
+    # Retry measured face landmarks inside person crops for small/missed faces.
+    for person in people:
+        if DETECT_FACES and person.face is None:
+            x0, y0, x1, y1 = [int(round(value)) for value in person.box]
+            x0, y0, x1, y1 = max(0, x0), max(0, y0), min(w, x1), min(h, y1)
+            crop = image[y0:y1, x0:x1]
+            if min(crop.shape[:2], default=0) >= 24:
+                scale = max(1.0, 640.0 / max(crop.shape[:2]))
+                if scale > 1:
+                    crop = cv2.resize(crop, None, fx=scale, fy=scale, interpolation=cv2.INTER_CUBIC)
+                candidates = run_faces(crop, min_face=24)
+                if candidates:
+                    face = max(candidates, key=lambda lm: np.ptp(lm[:, 0]) * np.ptp(lm[:, 1]))
+                    person.face = face / scale + np.array([x0, y0], dtype=np.float32)
+        # A detected face gets its own nine-step route even without a body pose.
+        if person.face is not None and person.category != "human":
+            person.category = "human"
+            person.note = "pose not found; face landmarks available"
 
     # A segmentation mask is preferred, but a detector box is still enough to
     # keep the object independently selectable and to give the shape branch a
@@ -2048,17 +2077,31 @@ def run_job(name, heading, sk, info, image, results):
 
 
 def process_item(it, image, results):
+    # Save the face first so an unusable body pose cannot suppress its nine steps.
+    if "face" in it.routes and it.face is not None:
+        try:
+            sk, info = build_face_sketch(image, it.face)
+            run_job(
+                f"{it.idx:02d}_person_face",
+                f"#{it.idx} FACE — 68 landmarks · 9 steps",
+                sk, info, image, results,
+            )
+        except Exception as error:
+            print(f"#{it.idx}: face guide skipped → {type(error).__name__}: {error}")
+
     jobs = []
     if "body" in it.routes:
-        sk, info = build_body_sketch(it)
+        try:
+            sk, info = build_body_sketch(it)
+        except Exception as error:
+            if "face" not in it.routes or it.face is None:
+                raise
+            sk, info = None, str(error)
         if sk is None:
             print(f"#{it.idx}: body geometry skipped ({info}).")
         else:
             jobs.append((f"{it.idx:02d}_person_body", f"#{it.idx} PERSON body — {info['view']} view"
                          f"{'' if info['lower'] else ' (upper body only)'} · head from {info['head_source']}", sk, info))
-    if "face" in it.routes:
-        sk, info = build_face_sketch(image, it.face)
-        jobs.append((f"{it.idx:02d}_person_face", f"#{it.idx} FACE — 68 landmarks", sk, info))
     if "creature" in it.routes and it.mask is not None:
         sk, info = build_creature_sketch(it)
         jobs.append((f"{it.idx:02d}_{it.label.replace(' ', '_')}_creature", f"#{it.idx} {it.label.upper()} ({it.category}) construction", sk, info))
